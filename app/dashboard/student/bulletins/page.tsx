@@ -45,13 +45,13 @@ export default function StudentBulletinsPage() {
     }
   };
 
-  const handleDownload = async () => {
+  const handleDownload = async (semesterId: string) => {
     if (!user) return;
     setDownloading(true);
     setMessage(null);
 
     try {
-      const blob = await gradesService.downloadBulletin(user.id);
+      const blob = await gradesService.downloadBulletin(user.id, semesterId);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -138,7 +138,7 @@ export default function StudentBulletinsPage() {
                 </div>
 
                 <button 
-                  onClick={handleDownload}
+                  onClick={() => handleDownload(sem.id)}
                   disabled={downloading}
                   className="btn-primary w-full h-16 shadow-xl shadow-primary/20 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all"
                 >

@@ -46,7 +46,7 @@ export const gradesService = {
     method: 'POST',
     body: JSON.stringify(gradeData),
   }),
-  downloadBulletin: async (studentId: string) => {
+  downloadBulletin: async (studentId: string, semesterId: string) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const headers: Record<string, string> = {};
     
@@ -54,7 +54,8 @@ export const gradesService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_URL}/exports/bulletin/${studentId}`, { headers });
+    const url = `${API_URL}/exports/bulletin/${studentId}?semesterId=${semesterId}`;
+    const response = await fetch(url, { headers });
     if (!response.ok) throw new Error('Erreur lors du téléchargement');
     return response.blob();
   },
