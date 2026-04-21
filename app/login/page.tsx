@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
-import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
+import { LogIn, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     try {
       const response = await authService.login({ email, password });
-      login(response.accessToken, response.user);
+      login(response.access_token, response.user);
     } catch (err: any) {
       setError(err.message || 'Identifiants invalides');
     } finally {
@@ -28,31 +28,36 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100 via-white to-slate-100">
-      <div className="glass-card w-full max-w-md p-8 fade-in flex flex-col gap-6" style={{ padding: '2.5rem' }}>
-        <div className="text-center flex flex-col gap-2">
-          <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-sm">
-            <LogIn className="text-primary w-8 h-8" />
+    <main className="min-h-screen flex items-center justify-center p-6 bg-slate-50 relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
+      <div className="glass-card w-full max-w-md p-10 fade-in relative z-10">
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <LogIn className="text-primary w-10 h-10" />
           </div>
-          <h1 className="text-3xl font-bold">Bienvenue</h1>
-          <p className="text-muted text-sm">Connectez-vous pour accéder à vos bulletins</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Bon retour !</h1>
+          <p className="text-slate-500 text-sm">Portail officiel de gestion des bulletins INPTIC</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {error && (
-            <div className="bg-red-50 border border-red-100 text-red-600 p-3 rounded-lg text-sm text-center animate-shake">
-              {error}
+            <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm flex items-center gap-3 animate-shake">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span className="font-medium">{error}</span>
             </div>
           )}
 
-          <div className="input-group">
+          <div className="flex flex-col gap-2">
             <label className="label">Adresse Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <div className="relative flex items-center">
+              <Mail className="absolute left-4 w-5 h-5 text-slate-400 z-10" />
               <input
                 type="email"
                 required
-                className="input-field pl-10"
+                className="input-field pl-12"
                 placeholder="Ex: admin@inptic.ga"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -60,14 +65,14 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="input-group">
+          <div className="flex flex-col gap-2">
             <label className="label">Mot de passe</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <div className="relative flex items-center">
+              <Lock className="absolute left-4 w-5 h-5 text-slate-400 z-10" />
               <input
                 type="password"
                 required
-                className="input-field pl-10"
+                className="input-field pl-12"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -78,21 +83,21 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn-primary w-full mt-2 h-12"
+            className="btn-primary w-full h-14 mt-4 text-base"
           >
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-6 h-6 animate-spin" />
             ) : (
               <>
-                <span>Se connecter</span>
-                <LogIn className="w-4 h-4" />
+                <span>Se connecter au portail</span>
+                <LogIn className="w-5 h-5" />
               </>
             )}
           </button>
         </form>
 
-        <div className="text-center text-xs text-muted mt-4">
-          &copy; 2026 INPTIC UML - Portail Étudiant & Admin
+        <div className="text-center text-xs text-slate-400 mt-10 font-medium">
+          &copy; 2026 INPTIC UML &bull; Tous droits réservés
         </div>
       </div>
 

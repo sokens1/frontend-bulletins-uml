@@ -2,7 +2,8 @@
 
 import React, { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
   LayoutDashboard, 
   UserCircle, 
@@ -10,7 +11,14 @@ import {
   PenTool, 
   LogOut, 
   ShieldCheck,
-  GraduationCap
+  GraduationCap,
+  ChevronRight,
+  Users,
+  Clock,
+  History,
+  BarChart3,
+  BookOpen,
+  UserPlus
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -20,6 +28,7 @@ export default function DashboardLayout({
 }) {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -30,92 +39,173 @@ export default function DashboardLayout({
   if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-muted font-medium">Chargement de votre espace...</p>
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-semibold tracking-wide">Initialisation de votre session...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-[#f8fafc]">
-      {/* Sidebar */}
-      <aside className="w-64 glass-card m-4 mr-0 border-none rounded-3xl hidden md:flex flex-col p-6 shadow-xl sticky top-4 h-[calc(100vh-2rem)]">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="bg-primary p-2 rounded-xl">
-            <GraduationCap className="text-white w-6 h-6" />
+    <div className="min-h-screen flex bg-[#f8fafc] text-slate-800">
+      {/* Sidebar - Fixed width for stability */}
+      <aside className="w-72 hidden lg:flex flex-col p-6 sticky top-0 h-screen">
+        <div className="glass-card h-full flex flex-col p-6 shadow-xl border-white/50">
+          <div className="flex items-center gap-3 mb-12 px-2">
+            <div className="bg-primary p-2.5 rounded-2xl shadow-lg shadow-primary/20">
+              <GraduationCap className="text-white w-6 h-6" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-xl tracking-tight text-primary leading-tight">UML Portal</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">INPTIC GABON</span>
+            </div>
           </div>
-          <span className="font-bold text-xl tracking-tight">UML Portal</span>
-        </div>
 
-        <nav className="flex-1 flex flex-col gap-2">
-          <button onClick={() => router.push('/dashboard')} className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 text-slate-600 transition-all hover:text-primary font-medium">
-            <LayoutDashboard className="w-5 h-5" />
-            Tableau de bord
-          </button>
+          <nav className="flex-1 flex flex-col gap-2">
+            <NavItem 
+              icon={<LayoutDashboard />} 
+              label="Tableau de bord" 
+              onClick={() => router.push('/dashboard')} 
+              active={pathname === '/dashboard'}
+            />
 
-          {user.role === 'ADMIN' && (
-            <>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2 px-3">Administration</div>
-              <button onClick={() => router.push('/dashboard/admin/marks')} className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 text-slate-600 transition-all hover:text-primary font-medium">
-                <PenTool className="w-5 h-5" />
-                Saisie des notes
-              </button>
-              <button className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 text-slate-600 transition-all hover:text-primary font-medium">
-                <ShieldCheck className="w-5 h-5" />
-                Gestion Étudiants
-              </button>
-            </>
-          )}
+            {(user.role === 'ADMIN' || user.role === 'TEACHER' || user.role === 'SECRETARY') && (
+              <>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-8 mb-3 px-4">Scolarité</div>
+                <NavItem 
+                  icon={<PenTool />} 
+                  label="Saisie des notes" 
+                  onClick={() => router.push('/dashboard/admin/marks')} 
+                  active={pathname === '/dashboard/admin/marks'}
+                />
+              </>
+            )}
 
-          {user.role === 'STUDENT' && (
-            <>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2 px-3">Mon Espace</div>
-              <button className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 text-slate-600 transition-all hover:text-primary font-medium">
-                <FileText className="w-5 h-5" />
-                Mes Bulletins
-              </button>
-            </>
-          )}
-        </nav>
+            {user.role === 'ADMIN' && (
+              <>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-8 mb-3 px-4">Administration</div>
+                <NavItem 
+                  icon={<Users />} 
+                  label="Gestion Étudiants" 
+                  onClick={() => router.push('/dashboard/admin/students')}
+                  active={pathname === '/dashboard/admin/students'}
+                />
+                <NavItem 
+                  icon={<Clock />} 
+                  label="Gestion Absences" 
+                  onClick={() => router.push('/dashboard/admin/absences')}
+                  active={pathname === '/dashboard/admin/absences'}
+                />
+                <NavItem 
+                  icon={<History />} 
+                  label="Audit Sécurité" 
+                  onClick={() => router.push('/dashboard/admin/audit')}
+                  active={pathname === '/dashboard/admin/audit'}
+                />
+                <NavItem 
+                  icon={<BarChart3 />} 
+                  label="Suivi Promotion" 
+                  onClick={() => router.push('/dashboard/admin/promotion')}
+                  active={pathname === '/dashboard/admin/promotion'}
+                />
+                <NavItem 
+                  icon={<BookOpen size={20} />} 
+                  label="Gestion Académique" 
+                  onClick={() => router.push('/dashboard/admin/academic')}
+                  active={pathname === '/dashboard/admin/academic'}
+                />
+                <NavItem 
+                  icon={<UserPlus size={20} />} 
+                  label="Gestion Utilisateurs" 
+                  onClick={() => router.push('/dashboard/admin/users')}
+                  active={pathname === '/dashboard/admin/users'}
+                />
+              </>
+            )}
 
-        <div className="mt-auto pt-6 border-t border-slate-100 flex flex-col gap-2">
-          <button className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 text-slate-600 transition-all font-medium">
-            <UserCircle className="w-5 h-5" />
-            Mon Profil
-          </button>
-          <button onClick={logout} className="flex items-center gap-3 p-3 rounded-xl hover:bg-red-50 text-red-600 transition-all font-semibold">
-            <LogOut className="w-5 h-5" />
-            Déconnexion
-          </button>
+            {user.role === 'STUDENT' && (
+              <>
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-8 mb-3 px-4">Résultats</div>
+                <NavItem 
+                  icon={<FileText />} 
+                  label="Mes Bulletins" 
+                  onClick={() => router.push('/dashboard/student/bulletins')} 
+                  active={pathname === '/dashboard/student/bulletins'}
+                />
+              </>
+            )}
+          </nav>
+
+          <div className="mt-auto pt-6 border-t border-slate-100 flex flex-col gap-2">
+            <Link href="/dashboard/profile" className="group flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all">
+              <div className="flex items-center gap-3 text-slate-600 group-hover:text-primary transition-colors">
+                <UserCircle className="w-5 h-5" />
+                <span className="text-sm font-semibold">Mon Profil</span>
+              </div>
+              <ChevronRight className={`w-4 h-4 transition-all ${pathname === '/dashboard/profile' ? 'text-primary opacity-100' : 'text-slate-300 opacity-0 group-hover:opacity-100'}`} />
+            </Link>
+            <button 
+              onClick={logout} 
+              className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all font-bold text-sm"
+            >
+              <LogOut className="w-5 h-5" />
+              Déconnexion
+            </button>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-        <header className="flex justify-between items-center mb-8 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white/50 shadow-sm">
-          <div>
-            <h2 className="text-xl font-bold">Bonjour, {user.email.split('@')[0]}</h2>
-            <p className="text-xs text-muted">Aujourd'hui est un bon jour pour étudier.</p>
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 lg:p-8 min-h-screen flex flex-col gap-8">
+        <header className="flex justify-between items-center glass-card px-8 h-20 border-white/40">
+          <div className="flex flex-col">
+            <h2 className="text-lg font-bold text-slate-800">Bienvenue, {user.email.split('@')[0]}</h2>
+            <div className="flex items-center gap-2">
+               <span className="w-2 h-2 bg-success rounded-full"></span>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Session Active</span>
+            </div>
           </div>
+          
           <div className="flex items-center gap-4">
-            <div className="flex flex-col items-end hidden sm:flex">
-              <span className="text-sm font-bold">{user.email}</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold bg-opacity-10 ${user.role === 'ADMIN' ? 'bg-amber-500 text-amber-600' : 'bg-blue-500 text-blue-600'}`}>
+            <div className="text-right hidden sm:block leading-tight">
+              <p className="text-sm font-bold text-slate-900">{user.email}</p>
+              <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${
+                user.role === 'ADMIN' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+              }`}>
                 {user.role}
               </span>
             </div>
-            <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-              <UserCircle className="text-slate-500 w-6 h-6" />
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center text-slate-400">
+               <UserCircle className="w-7 h-7" />
             </div>
           </div>
         </header>
 
-        <div className="fade-in">
+        <section className="flex-1 fade-in">
           {children}
-        </div>
+        </section>
       </main>
     </div>
+  );
+}
+
+function NavItem({ icon, label, onClick, active = false, disabled = false }: { icon: any, label: string, onClick?: () => void, active?: boolean, disabled?: boolean }) {
+  return (
+    <button 
+      onClick={onClick}
+      disabled={disabled}
+      className={`
+        flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-300 group
+        ${active ? 'bg-primary/5 text-primary shadow-sm shadow-primary/5' : 'text-slate-500 hover:bg-slate-50 hover:text-primary'}
+        ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+      `}
+    >
+      <div className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+        {React.cloneElement(icon, { size: 20 })}
+      </div>
+      <span className="text-sm font-bold tracking-tight">{label}</span>
+      {active && <div className="ml-auto w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(0,51,102,0.5)]"></div>}
+    </button>
   );
 }
