@@ -29,8 +29,9 @@ export default function MarksEntryPage() {
         structure.forEach((sem: any) => {
           sem.ues.forEach((ue: any) => {
             ue.subjects.forEach((subj: any) => {
-              // Filter: If user is TEACHER, only show subjects they are assigned to
-              const isAssigned = user?.role === 'TEACHER' ? subj.teacherId === user.teacher?.id : true;
+              // Filter by teacher assignment only when teacher metadata exists.
+              const currentTeacherId = (user as any)?.teacher?.id;
+              const isAssigned = currentTeacherId ? subj.teacherId === currentTeacherId : true;
               
               if (isAssigned && !allSubjects.find(s => s.id === subj.id)) {
                 allSubjects.push({ ...subj, ueName: ue.name });

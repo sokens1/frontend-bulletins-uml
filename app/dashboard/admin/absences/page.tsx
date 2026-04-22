@@ -101,6 +101,17 @@ export default function AbsenceManagement() {
     }
   };
 
+  const handleUpdate = async (id: string) => {
+    try {
+      await attendanceService.updateAttendance(id, editValue);
+      showNotification('success', 'Absence mise à jour');
+      setEditingId(null);
+      fetchData();
+    } catch (err) {
+      showNotification('error', 'Erreur lors de la mise à jour');
+    }
+  };
+
   const filteredAttendances = attendances.filter(a => {
     const matchesSubject = filterSubject ? a.subjectId === filterSubject : true;
     const matchesSearch = searchStudent 
@@ -351,22 +362,3 @@ export default function AbsenceManagement() {
   );
 }
 
-function X(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  )
-}

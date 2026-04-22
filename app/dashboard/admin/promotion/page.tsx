@@ -60,7 +60,7 @@ export default function PromotionSummary() {
   const handleDownloadBulletin = async (studentId: string, name: string) => {
     try {
       setDownloadingId(studentId);
-      const blob = await gradesService.downloadBulletin(studentId);
+      const blob = await gradesService.downloadBulletin(studentId, selectedSemester);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

@@ -191,6 +191,6 @@ export default function RegisterPage() {
           Déjà un compte ? <Link href="/login" className="text-primary font-bold hover:underline">Se connecter</Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }
