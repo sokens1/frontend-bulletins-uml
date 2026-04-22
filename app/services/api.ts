@@ -1,6 +1,11 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://grade-management-api-qfe3.onrender.com';
 
-export async function apiFetch(endpoint: string, options: any = {}) {
+type ApiPayload = Record<string, unknown>;
+type ApiFetchOptions = RequestInit & {
+  headers?: HeadersInit;
+};
+
+export async function apiFetch(endpoint: string, options: ApiFetchOptions = {}) {
   const isServer = typeof window === 'undefined';
   const token = !isServer ? localStorage.getItem('token') : null;
   
@@ -21,28 +26,35 @@ export async function apiFetch(endpoint: string, options: any = {}) {
     headers,
   });
 
-  const data = await response.json().catch(() => ({}));
+  const data: unknown = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong');
+    const message =
+      typeof data === 'object' &&
+      data !== null &&
+      'message' in data &&
+      typeof (data as { message?: unknown }).message === 'string'
+        ? (data as { message: string }).message
+        : 'Something went wrong';
+    throw new Error(message);
   }
 
   return data;
 }
 
 export const authService = {
-  login: (credentials: any) => apiFetch('/auth/login', {
+  login: (credentials: ApiPayload) => apiFetch('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   }),
-  register: (studentData: any) => apiFetch('/auth/register', {
+  register: (studentData: ApiPayload) => apiFetch('/auth/register', {
     method: 'POST',
     body: JSON.stringify(studentData),
   }),
 };
 
 export const gradesService = {
-  enterGrade: (gradeData: any) => apiFetch('/grades/enter', {
+  enterGrade: (gradeData: ApiPayload) => apiFetch('/grades/enter', {
     method: 'POST',
     body: JSON.stringify(gradeData),
   }),
@@ -65,22 +77,22 @@ export const gradesService = {
 
 export const academicService = {
   getStructure: () => apiFetch('/academic/structure'),
-  createUE: (data: any) => apiFetch('/academic/ue', {
+  createUE: (data: ApiPayload) => apiFetch('/academic/ue', {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  updateUE: (id: string, data: any) => apiFetch(`/academic/ue/${id}`, {
+  updateUE: (id: string, data: ApiPayload) => apiFetch(`/academic/ue/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
   deleteUE: (id: string) => apiFetch(`/academic/ue/${id}`, {
     method: 'DELETE',
   }),
-  createSubject: (data: any) => apiFetch('/academic/subject', {
+  createSubject: (data: ApiPayload) => apiFetch('/academic/subject', {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  updateSubject: (id: string, data: any) => apiFetch(`/academic/subject/${id}`, {
+  updateSubject: (id: string, data: ApiPayload) => apiFetch(`/academic/subject/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
@@ -91,11 +103,11 @@ export const academicService = {
 
 export const userService = {
   getStudents: () => apiFetch('/users/students'),
-  createStudent: (data: any) => apiFetch('/users/students', {
+  createStudent: (data: ApiPayload) => apiFetch('/users/students', {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  updateStudent: (id: string, data: any) => apiFetch(`/users/students/${id}`, {
+  updateStudent: (id: string, data: ApiPayload) => apiFetch(`/users/students/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
@@ -104,15 +116,15 @@ export const userService = {
   }),
 
   getStaff: () => apiFetch('/users/staff'),
-  createTeacher: (data: any) => apiFetch('/users/teacher', {
+  createTeacher: (data: ApiPayload) => apiFetch('/users/teacher', {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  createSecretary: (data: any) => apiFetch('/users/secretary', {
+  createSecretary: (data: ApiPayload) => apiFetch('/users/secretary', {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  updateStaff: (id: string, data: any) => apiFetch(`/users/staff/${id}`, {
+  updateStaff: (id: string, data: ApiPayload) => apiFetch(`/users/staff/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
@@ -126,7 +138,7 @@ export const userService = {
 
 export const attendanceService = {
   getAttendances: () => apiFetch('/attendance'),
-  createAttendance: (data: any) => apiFetch('/attendance', {
+  createAttendance: (data: ApiPayload) => apiFetch('/attendance', {
     method: 'POST',
     body: JSON.stringify(data),
   }),
