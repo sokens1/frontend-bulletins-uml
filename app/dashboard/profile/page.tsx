@@ -22,6 +22,15 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    class: '',
+    birthPlace: '',
+    birthDate: '',
+  });
 
   useEffect(() => {
     fetchProfile();
@@ -32,6 +41,14 @@ export default function ProfilePage() {
       setLoading(true);
       const data = await userService.getProfile();
       setProfile(data);
+      setFormData({
+        email: data.email || '',
+        firstName: data.student?.firstName || data.teacher?.firstName || '',
+        lastName: data.student?.lastName || data.teacher?.lastName || '',
+        class: data.student?.class || '',
+        birthPlace: data.student?.birthPlace || '',
+        birthDate: data.student?.birthDate ? new Date(data.student.birthDate).toISOString().split('T')[0] : '',
+      });
     } catch (err) {
       showNotification('error', 'Impossible de charger le profil');
     } finally {
@@ -42,6 +59,28 @@ export default function ProfilePage() {
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsUpdating(true);
+      await userService.updateProfile({
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        class: formData.class || undefined,
+        birthPlace: formData.birthPlace || undefined,
+        birthDate: formData.birthDate || undefined,
+      });
+      await fetchProfile();
+      setIsEditing(false);
+      showNotification('success', 'Profil mis à jour avec succès');
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de la mise à jour du profil');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   if (loading) {
@@ -103,9 +142,12 @@ export default function ProfilePage() {
                        </span>
                     </div>
                   </div>
-                  <button className="bg-white hover:bg-slate-50 text-slate-600 px-6 py-2.5 rounded-2xl text-sm font-bold border border-slate-100 transition-all flex items-center gap-2 shadow-sm">
-                     Modifier mon profil
-                  </button>
+                 <button
+                   onClick={() => setIsEditing((prev) => !prev)}
+                   className="bg-white hover:bg-slate-50 text-slate-600 px-6 py-2.5 rounded-2xl text-sm font-bold border border-slate-100 transition-all flex items-center gap-2 shadow-sm"
+                 >
+                   {isEditing ? 'Annuler' : 'Modifier mon profil'}
+                 </button>
                </div>
             </div>
          </div>
@@ -156,6 +198,27 @@ export default function ProfilePage() {
 
          {/* Main Details */}
          <div className="md:col-span-2 space-y-6">
+            {isEditing && (
+              <form onSubmit={handleSaveProfile} className="glass-card p-8 border-white/60 shadow-xl space-y-6">
+                <h3 className="font-black text-slate-800 tracking-tight">Modification du profil</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input className="input-field" placeholder="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                  <input className="input-field" placeholder="Nom" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} />
+                  <input className="input-field" placeholder="Prénom" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} />
+                  {profile.student && (
+                    <>
+                      <input className="input-field" placeholder="Classe" value={formData.class} onChange={(e) => setFormData({ ...formData, class: e.target.value })} />
+                      <input className="input-field" placeholder="Lieu de naissance" value={formData.birthPlace} onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })} />
+                      <input type="date" className="input-field" value={formData.birthDate} onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })} />
+                    </>
+                  )}
+                </div>
+                <button type="submit" disabled={isUpdating} className="btn-primary h-12 px-6">
+                  {isUpdating ? 'Enregistrement...' : 'Enregistrer'}
+                </button>
+              </form>
+            )}
+
             {profile.student && (
                <div className="glass-card p-8 border-white/60 shadow-xl space-y-6">
                   <div className="flex items-center gap-3 pb-6 border-b border-slate-50">

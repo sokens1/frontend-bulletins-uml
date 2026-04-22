@@ -14,9 +14,10 @@ import {
   Check,
   AlertCircle,
   Clock,
-  ExternalLink
+  ExternalLink,
+  FileText
 } from 'lucide-react';
-import { userService, exportService } from '../../../services/api';
+import { userService, exportService, academicService, gradesService } from '../../../services/api';
 
 export default function StudentsManagement() {
   const [students, setStudents] = useState<any[]>([]);
@@ -27,19 +28,36 @@ export default function StudentsManagement() {
   const [showModal, setShowModal] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [downloadingBulletinId, setDownloadingBulletinId] = useState<string | null>(null);
+  const [selectedSemesterId, setSelectedSemesterId] = useState('');
+  const [semesters, setSemesters] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     birthDate: '',
+    birthPlace: '',
     class: '',
     studentId: ''
   });
 
   useEffect(() => {
     fetchStudents();
+    fetchSemesters();
   }, []);
+
+  const fetchSemesters = async () => {
+    try {
+      const structure = await academicService.getStructure();
+      setSemesters(structure);
+      if (structure.length > 0) {
+        setSelectedSemesterId(structure[0].id);
+      }
+    } catch (err) {
+      showNotification('error', 'Impossible de charger les semestres');
+    }
+  };
 
   const fetchStudents = async () => {
     try {
@@ -103,7 +121,7 @@ export default function StudentsManagement() {
       }
       setShowModal(false);
       setEditingStudent(null);
-      setFormData({ firstName: '', lastName: '', email: '', password: '', birthDate: '', class: '', studentId: '' });
+      setFormData({ firstName: '', lastName: '', email: '', password: '', birthDate: '', birthPlace: '', class: '', studentId: '' });
       fetchStudents();
     } catch (err: any) {
       showNotification('error', err.message || 'Erreur lors de l’opération');
@@ -123,6 +141,28 @@ export default function StudentsManagement() {
     }
   };
 
+  const handleDownloadBulletin = async (studentId: string, fullName: string) => {
+    if (!selectedSemesterId) {
+      showNotification('error', 'Sélectionnez un semestre avant le téléchargement');
+      return;
+    }
+    try {
+      setDownloadingBulletinId(studentId);
+      const blob = await gradesService.downloadBulletin(studentId, selectedSemesterId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bulletin_${fullName.replace(/\s+/g, '_')}_${new Date().getFullYear()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      showNotification('error', 'Erreur lors du téléchargement du bulletin');
+    } finally {
+      setDownloadingBulletinId(null);
+    }
+  };
+
   const openEditModal = (student: any) => {
     setEditingStudent(student);
     setFormData({
@@ -131,6 +171,7 @@ export default function StudentsManagement() {
       email: student.user?.email || '',
       password: '',
       birthDate: student.birthDate ? new Date(student.birthDate).toISOString().split('T')[0] : '',
+      birthPlace: student.birthPlace || '',
       class: student.class,
       studentId: student.studentId || ''
     });
@@ -156,6 +197,17 @@ export default function StudentsManagement() {
         </div>
 
         <div className="flex items-center gap-3">
+          <select
+            className="glass-card px-4 py-2.5 text-sm font-bold text-slate-600 border-white/60 rounded-2xl"
+            value={selectedSemesterId}
+            onChange={(e) => setSelectedSemesterId(e.target.value)}
+          >
+            {semesters.map((sem) => (
+              <option key={sem.id} value={sem.id}>
+                {sem.name}
+              </option>
+            ))}
+          </select>
           <button 
             onClick={handleDownloadTemplate}
             className="glass-card px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-primary transition-all flex items-center gap-2 border-white/60"
@@ -303,6 +355,18 @@ export default function StudentsManagement() {
                         <button onClick={() => handleDelete(student.id)} className="p-2 hover:bg-red-50 text-red-600 rounded-xl transition-all border border-transparent hover:border-red-100">
                           <Trash2 size={16} />
                         </button>
+                        <button
+                          onClick={() => handleDownloadBulletin(student.id, `${student.lastName} ${student.firstName}`)}
+                          disabled={downloadingBulletinId === student.id}
+                          className={`p-2 rounded-xl transition-all border border-transparent ${
+                            downloadingBulletinId === student.id
+                              ? 'bg-slate-100 text-slate-300'
+                              : 'hover:bg-primary/10 text-slate-400 hover:text-primary hover:border-primary/10'
+                          }`}
+                          title="Télécharger bulletin"
+                        >
+                          <FileText size={16} />
+                        </button>
                         <button className="p-2 hover:bg-slate-100 text-slate-400 rounded-xl transition-all border border-transparent hover:border-slate-200">
                           <ExternalLink size={16} />
                         </button>
@@ -379,6 +443,18 @@ export default function StudentsManagement() {
                          onChange={(e) => setFormData({...formData, class: e.target.value.toUpperCase()})}
                        />
                     </div>
+                 </div>
+
+                 <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lieu de naissance</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Libreville"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold"
+                      value={formData.birthPlace}
+                      onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
+                    />
                  </div>
 
                  {!editingStudent && (

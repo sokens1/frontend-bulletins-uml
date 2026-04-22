@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   LayoutDashboard, 
   UserCircle, 
@@ -50,25 +51,26 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen flex bg-[#f8fafc] text-slate-800">
       {/* Sidebar - Fixed width for stability */}
-      <aside className="w-72 hidden lg:flex flex-col p-6 sticky top-0 h-screen">
-        <div className="glass-card h-full flex flex-col p-6 shadow-xl border-white/50">
+      <aside className="w-80 hidden lg:flex flex-col p-6 sticky top-0 h-screen">
+        <div className="glass-card h-full min-h-0 flex flex-col p-6 shadow-xl border-white/50">
           <div className="flex items-center gap-3 mb-12 px-2">
-            <div className="bg-primary p-2.5 rounded-2xl shadow-lg shadow-primary/20">
-              <GraduationCap className="text-white w-6 h-6" />
+            <div className="bg-white p-2 rounded-2xl shadow-lg border border-slate-100">
+              <Image src="/logo-inptic.png" alt="INPTIC" width={44} height={44} priority />
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-xl tracking-tight text-primary leading-tight">UML Portal</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">INPTIC GABON</span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-black text-base tracking-tight text-slate-800">INPTIC</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portail Bulletins</span>
             </div>
           </div>
 
-          <nav className="flex-1 flex flex-col gap-2">
-            <NavItem 
-              icon={<LayoutDashboard />} 
-              label="Tableau de bord" 
-              onClick={() => router.push('/dashboard')} 
-              active={pathname === '/dashboard'}
-            />
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+            <nav className="flex flex-col gap-2">
+              <NavItem 
+                icon={<LayoutDashboard />} 
+                label="Tableau de bord" 
+                onClick={() => router.push('/dashboard')} 
+                active={pathname === '/dashboard'}
+              />
 
             {(user.role === 'ADMIN' || user.role === 'TEACHER' || user.role === 'SECRETARY') && (
               <>
@@ -82,15 +84,9 @@ export default function DashboardLayout({
               </>
             )}
 
-            {user.role === 'ADMIN' && (
+            {(user.role === 'ADMIN' || user.role === 'SECRETARY') && (
               <>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-8 mb-3 px-4">Administration</div>
-                <NavItem 
-                  icon={<Users />} 
-                  label="Gestion Étudiants" 
-                  onClick={() => router.push('/dashboard/admin/students')}
-                  active={pathname === '/dashboard/admin/students'}
-                />
                 <NavItem 
                   icon={<Clock />} 
                   label="Gestion Absences" 
@@ -98,60 +94,75 @@ export default function DashboardLayout({
                   active={pathname === '/dashboard/admin/absences'}
                 />
                 <NavItem 
-                  icon={<History />} 
-                  label="Audit Sécurité" 
-                  onClick={() => router.push('/dashboard/admin/audit')}
-                  active={pathname === '/dashboard/admin/audit'}
-                />
-                <NavItem 
                   icon={<BarChart3 />} 
                   label="Suivi Promotion" 
                   onClick={() => router.push('/dashboard/admin/promotion')}
                   active={pathname === '/dashboard/admin/promotion'}
                 />
-                <NavItem 
-                  icon={<BookOpen size={20} />} 
-                  label="Gestion Académique" 
-                  onClick={() => router.push('/dashboard/admin/academic')}
-                  active={pathname === '/dashboard/admin/academic'}
-                />
-                <NavItem 
-                  icon={<UserPlus size={20} />} 
-                  label="Gestion Utilisateurs" 
-                  onClick={() => router.push('/dashboard/admin/users')}
-                  active={pathname === '/dashboard/admin/users'}
-                />
+                {user.role === 'ADMIN' && (
+                  <NavItem 
+                    icon={<Users />} 
+                    label="Gestion Étudiants" 
+                    onClick={() => router.push('/dashboard/admin/students')}
+                    active={pathname === '/dashboard/admin/students'}
+                  />
+                )}
+                {user.role === 'ADMIN' && (
+                  <NavItem 
+                    icon={<History />} 
+                    label="Audit Sécurité" 
+                    onClick={() => router.push('/dashboard/admin/audit')}
+                    active={pathname === '/dashboard/admin/audit'}
+                  />
+                )}
+                {user.role === 'ADMIN' && (
+                  <NavItem 
+                    icon={<BookOpen size={20} />} 
+                    label="Gestion Académique" 
+                    onClick={() => router.push('/dashboard/admin/academic')}
+                    active={pathname === '/dashboard/admin/academic'}
+                  />
+                )}
+                {user.role === 'ADMIN' && (
+                  <NavItem 
+                    icon={<UserPlus size={20} />} 
+                    label="Gestion Utilisateurs" 
+                    onClick={() => router.push('/dashboard/admin/users')}
+                    active={pathname === '/dashboard/admin/users'}
+                  />
+                )}
               </>
             )}
 
-            {user.role === 'STUDENT' && (
-              <>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-8 mb-3 px-4">Résultats</div>
-                <NavItem 
-                  icon={<FileText />} 
-                  label="Mes Bulletins" 
-                  onClick={() => router.push('/dashboard/student/bulletins')} 
-                  active={pathname === '/dashboard/student/bulletins'}
-                />
-              </>
-            )}
-          </nav>
+              {user.role === 'STUDENT' && (
+                <>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-8 mb-3 px-4">Résultats</div>
+                  <NavItem 
+                    icon={<FileText />} 
+                    label="Mes Bulletins" 
+                    onClick={() => router.push('/dashboard/student/bulletins')} 
+                    active={pathname === '/dashboard/student/bulletins'}
+                  />
+                </>
+              )}
+            </nav>
 
-          <div className="mt-auto pt-6 border-t border-slate-100 flex flex-col gap-2">
-            <Link href="/dashboard/profile" className="group flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all">
-              <div className="flex items-center gap-3 text-slate-600 group-hover:text-primary transition-colors">
-                <UserCircle className="w-5 h-5" />
-                <span className="text-sm font-semibold">Mon Profil</span>
-              </div>
-              <ChevronRight className={`w-4 h-4 transition-all ${pathname === '/dashboard/profile' ? 'text-primary opacity-100' : 'text-slate-300 opacity-0 group-hover:opacity-100'}`} />
-            </Link>
-            <button 
-              onClick={logout} 
-              className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all font-bold text-sm"
-            >
-              <LogOut className="w-5 h-5" />
-              Déconnexion
-            </button>
+            <div className="pt-6 mt-6 border-t border-slate-100 flex flex-col gap-2">
+              <Link href="/dashboard/profile" className="group flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all">
+                <div className="flex items-center gap-3 text-slate-600 group-hover:text-primary transition-colors">
+                  <UserCircle className="w-5 h-5" />
+                  <span className="text-sm font-semibold">Mon Profil</span>
+                </div>
+                <ChevronRight className={`w-4 h-4 transition-all ${pathname === '/dashboard/profile' ? 'text-primary opacity-100' : 'text-slate-300 opacity-0 group-hover:opacity-100'}`} />
+              </Link>
+              <button 
+                onClick={logout} 
+                className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all font-bold text-sm"
+              >
+                <LogOut className="w-5 h-5" />
+                Déconnexion
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -204,7 +215,9 @@ function NavItem({ icon, label, onClick, active = false, disabled = false }: { i
       <div className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
         {React.cloneElement(icon, { size: 20 })}
       </div>
-      <span className="text-sm font-bold tracking-tight">{label}</span>
+      <span className="text-sm font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
+        {label}
+      </span>
       {active && <div className="ml-auto w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(0,51,102,0.5)]"></div>}
     </button>
   );

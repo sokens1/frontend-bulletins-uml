@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, 
-  Settings2, 
   Plus, 
   ChevronRight, 
   ChevronDown, 
@@ -19,7 +18,7 @@ import {
   X,
   AlertCircle
 } from 'lucide-react';
-import { academicService, userService } from '../../../services/api';
+import { academicService, userService, settingsService } from '../../../services/api';
 
 export default function AcademicManagement() {
   const [structure, setStructure] = useState<any[]>([]);
@@ -31,6 +30,11 @@ export default function AcademicManagement() {
   const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
   const [editSubjectData, setEditSubjectData] = useState<any>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [rulesSettings, setRulesSettings] = useState({
+    absencePenaltyPerHour: 0.01,
+    soutenanceUeCode: 'UE6-2',
+    enableSoutenanceRetake: true,
+  });
 
   // Creation states
   const [showUEModal, setShowUEModal] = useState(false);
@@ -63,12 +67,18 @@ export default function AcademicManagement() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [data, teachersData] = await Promise.all([
+      const [data, teachersData, rulesData] = await Promise.all([
         academicService.getStructure(),
-        userService.getTeachers()
+        userService.getTeachers(),
+        settingsService.getAcademicRules()
       ]);
       setStructure(data);
       setTeachers(teachersData);
+      setRulesSettings(rulesData as {
+        absencePenaltyPerHour: number;
+        soutenanceUeCode: string;
+        enableSoutenanceRetake: boolean;
+      });
       
       // Auto-expand active semester
       if (data.length > 0) setExpandedSems([data[0].id]);
@@ -167,6 +177,28 @@ export default function AcademicManagement() {
       fetchData();
     } catch (err) {
       showNotification('error', 'Erreur lors de la suppression');
+    }
+  };
+
+  const handleSaveRules = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsSubmitting(true);
+      const updated = await settingsService.updateAcademicRules({
+        absencePenaltyPerHour: Number(rulesSettings.absencePenaltyPerHour),
+        soutenanceUeCode: rulesSettings.soutenanceUeCode,
+        enableSoutenanceRetake: rulesSettings.enableSoutenanceRetake,
+      });
+      setRulesSettings(updated as {
+        absencePenaltyPerHour: number;
+        soutenanceUeCode: string;
+        enableSoutenanceRetake: boolean;
+      });
+      showNotification('success', 'Paramètres des règles de gestion mis à jour');
+    } catch (err) {
+      showNotification('error', 'Erreur lors de la mise à jour des paramètres');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -399,19 +431,64 @@ export default function AcademicManagement() {
       )}
 
       {/* Regulation Card */}
-      <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex gap-5">
-         <div className="bg-white p-3 rounded-2xl shadow-sm h-fit text-primary">
-            <Percent size={24} />
+      <form onSubmit={handleSaveRules} className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex flex-col gap-5">
+         <div className="flex gap-5">
+           <div className="bg-white p-3 rounded-2xl shadow-sm h-fit text-primary">
+              <Percent size={24} />
+           </div>
+           <div className="space-y-2">
+              <h4 className="font-bold text-blue-900 leading-tight">Règles de gestion (paramétrables)</h4>
+              <p className="text-sm text-blue-700/80 leading-relaxed max-w-3xl">
+                Ces paramètres pilotent les calculs globaux : pénalité d&apos;absence et règle de reprise de soutenance.
+              </p>
+           </div>
          </div>
-         <div className="space-y-2">
-            <h4 className="font-bold text-blue-900 leading-tight">Aide au paramétrage</h4>
-            <p className="text-sm text-blue-700/80 leading-relaxed max-w-3xl">
-              La pondération CC/Examen par défaut est de 40% (0.4) et 60% (0.6). Si vous modifiez ces valeurs pour une matière, 
-              le système recalculera automatiquement les moyennes des étudiants en conséquence. La somme des deux poids doit 
-              idéalement être égale à 1.0.
-            </p>
+
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+           <div className="space-y-1.5">
+             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Pénalité / heure d&apos;absence</label>
+             <input
+               type="number"
+               step="0.01"
+               min="0"
+               className="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold"
+               value={rulesSettings.absencePenaltyPerHour}
+               onChange={(e) => setRulesSettings({ ...rulesSettings, absencePenaltyPerHour: parseFloat(e.target.value) || 0 })}
+             />
+           </div>
+           <div className="space-y-1.5">
+             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Code UE soutenance</label>
+             <input
+               type="text"
+               className="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold"
+               value={rulesSettings.soutenanceUeCode}
+               onChange={(e) => setRulesSettings({ ...rulesSettings, soutenanceUeCode: e.target.value })}
+             />
+           </div>
+           <div className="space-y-1.5">
+             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Reprise soutenance active</label>
+             <select
+               className="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-700"
+               value={rulesSettings.enableSoutenanceRetake ? 'true' : 'false'}
+               onChange={(e) => setRulesSettings({ ...rulesSettings, enableSoutenanceRetake: e.target.value === 'true' })}
+             >
+               <option value="true">Oui</option>
+               <option value="false">Non</option>
+             </select>
+           </div>
          </div>
-      </div>
+
+         <div className="flex justify-end">
+           <button
+             type="submit"
+             disabled={isSubmitting}
+             className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all disabled:opacity-60"
+           >
+             <Save size={16} />
+             Enregistrer les règles
+           </button>
+         </div>
+      </form>
 
       {showUEModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">

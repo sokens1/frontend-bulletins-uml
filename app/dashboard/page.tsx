@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Users, 
-  BookOpen, 
-  CheckCircle, 
+import {
+  Users,
+  BookOpen,
+  CheckCircle,
   TrendingUp,
   ArrowRight,
   Zap,
   Clock,
-  Loader2
+  Loader2,
+  PieChart,
+  BarChart3,
 } from 'lucide-react';
 import Link from 'next/link';
 import { userService, academicService, gradesService } from '../services/api';
@@ -218,21 +220,41 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <div className="glass-card p-10 flex flex-col gap-8 bg-primary text-white border-none shadow-primary/20">
-             <div className="flex flex-col gap-2">
-                <h3 className="text-lg font-bold">Portail Support</h3>
-                <p className="text-blue-100/60 text-sm">En cas de problème technique sur vos bulletins.</p>
-             </div>
-             <button className="w-full bg-white/10 hover:bg-white/20 px-6 py-4 rounded-2xl font-bold text-sm transition-all border border-white/10">
-                Ouvrir un ticket
-             </button>
+          <div className="glass-card p-8 flex flex-col gap-6">
+            <div className="flex items-center gap-3">
+              <PieChart className="text-primary w-5 h-5" />
+              <h3 className="text-base font-bold text-slate-800">Réussite du semestre</h3>
+            </div>
+            <div className="flex items-center gap-5">
+              <div
+                className="w-28 h-28 rounded-full shrink-0"
+                style={{
+                  background: `conic-gradient(#10b981 ${stats.successRate}%, #e2e8f0 ${stats.successRate}% 100%)`,
+                }}
+              >
+                <div className="w-full h-full p-3">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <span className="text-sm font-black text-slate-700">{stats.successRate}%</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Camembert de validation de la promotion pour le semestre actif.
+              </p>
+            </div>
           </div>
-          
-          <div className="glass-card p-10 flex flex-col items-center justify-center text-center gap-4">
-             <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300">
-                <Users className="w-8 h-8" />
-             </div>
-             <p className="text-sm font-bold text-slate-400 italic">Module Collaboratif<br/>Prochainement</p>
+
+          <div className="glass-card p-8 flex flex-col gap-5">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="text-primary w-5 h-5" />
+              <h3 className="text-base font-bold text-slate-800">Indicateurs clés</h3>
+            </div>
+            <SimpleBar label="Réussite" value={stats.successRate} colorClass="bg-emerald-500" />
+            <SimpleBar
+              label="Moyenne générale (/20)"
+              value={Math.max(0, Math.min(100, (stats.average / 20) * 100))}
+              colorClass="bg-primary"
+            />
           </div>
         </div>
       </div>
@@ -283,6 +305,22 @@ function ActivityItem({ title, desc, time, type }: { title: string, desc: string
           <span className="text-[10px] font-black text-slate-300 uppercase shrink-0">{time}</span>
         </div>
         <p className="text-xs text-slate-500 leading-relaxed font-medium">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function SimpleBar({ label, value, colorClass }: { label: string; value: number; colorClass: string }) {
+  const safeValue = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-slate-600">{label}</span>
+        <span className="text-[11px] font-black text-slate-400">{safeValue.toFixed(1)}%</span>
+      </div>
+      <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+        <div className={`h-full ${colorClass} rounded-full transition-all`} style={{ width: `${safeValue}%` }} />
       </div>
     </div>
   );

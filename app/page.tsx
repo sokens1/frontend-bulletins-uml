@@ -58,9 +58,13 @@ export default function LandingPage() {
                 Commencer l'expérience
                 <ArrowRight className="w-6 h-6" />
               </Link>
-              <button className="px-10 h-16 rounded-2xl border-2 border-slate-200 font-black text-slate-600 hover:bg-slate-100 transition-all">
+              <Link 
+                href="https://drive.google.com/drive/folders/1ia7Nn16FAUlZMwpWCzIltOSKikA5JjVn?usp=sharing" 
+                target="_blank"
+                className="px-10 h-16 rounded-2xl border-2 border-slate-200 font-black text-slate-600 hover:bg-slate-100 transition-all flex items-center justify-center"
+              >
                 Documentation
-              </button>
+              </Link>
             </div>
           </div>
 

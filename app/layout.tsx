@@ -5,6 +5,11 @@ import { AuthProvider } from "./context/AuthContext";
 export const metadata: Metadata = {
   title: "UML - Gestion des Bulletins",
   description: "Système automatisé de gestion des notes et bulletins INPTIC",
+  icons: {
+    icon: [
+      { url: '/logo-inptic.png' },
+    ],
+  },
 };
 
 export default function RootLayout({

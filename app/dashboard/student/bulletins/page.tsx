@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { gradesService, academicService } from '../../../services/api';
+import { gradesService, academicService, userService } from '../../../services/api';
 import { FileDown, FileText, Download, Loader2, AlertCircle, CheckCircle, GraduationCap, Lock } from 'lucide-react';
 
 export default function StudentBulletinsPage() {
@@ -11,6 +11,7 @@ export default function StudentBulletinsPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [semestersData, setSemestersData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [annualDownloading, setAnnualDownloading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -21,16 +22,22 @@ export default function StudentBulletinsPage() {
   const loadStudentData = async () => {
     try {
       setLoading(true);
+      const profile = await userService.getProfile() as any;
+      const studentId: string | undefined = profile?.student?.id;
+      if (!studentId) {
+        setSemestersData([]);
+        return;
+      }
+
       const structure = await academicService.getStructure();
       
       const detailedSems = await Promise.all(structure.map(async (sem: any) => {
         try {
-          const stats = await gradesService.getPromotionStats(sem.id);
-          const studentResult = stats.studentResults?.find((r: any) => r.student.userId === user?.id);
+          const report = await gradesService.getStudentReport(studentId, sem.id);
           return {
             ...sem,
-            stats: studentResult || null,
-            isLocked: !studentResult // If no result found, consider it locked/pending
+            stats: report || null,
+            isLocked: !report // If no report found, consider it locked/pending
           };
         } catch (e) {
           return { ...sem, isLocked: true };
@@ -51,7 +58,11 @@ export default function StudentBulletinsPage() {
     setMessage(null);
 
     try {
-      const blob = await gradesService.downloadBulletin(user.id, semesterId);
+      const profile = await userService.getProfile() as any;
+      const studentId: string | undefined = profile?.student?.id;
+      if (!studentId) throw new Error('Student profile missing');
+
+      const blob = await gradesService.downloadBulletin(studentId, semesterId);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -64,6 +75,31 @@ export default function StudentBulletinsPage() {
       setMessage({ type: 'error', text: "Le bulletin n'est pas encore disponible. Contactez l'administration." });
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadAnnual = async (year: string) => {
+    if (!user) return;
+    setAnnualDownloading(true);
+    setMessage(null);
+    try {
+      const profile = await userService.getProfile() as any;
+      const studentId: string | undefined = profile?.student?.id;
+      if (!studentId) throw new Error('Student profile missing');
+
+      const blob = await gradesService.downloadAnnualBulletin(studentId, year);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bulletin_Annuel_INPTIC_${year}_${user.email.split('@')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setMessage({ type: 'success', text: 'Bulletin annuel téléchargé avec succès.' });
+    } catch {
+      setMessage({ type: 'error', text: "Le bulletin annuel n'est pas encore disponible." });
+    } finally {
+      setAnnualDownloading(false);
     }
   };
 
@@ -159,6 +195,38 @@ export default function StudentBulletinsPage() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* Annual bulletins */}
+      <div className="glass-card p-8 border-white/60 shadow-xl">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-black text-slate-800 tracking-tight">Bulletins annuels</h3>
+            <p className="text-sm text-slate-500 font-medium">Téléchargez votre bulletin annuel (S5 + S6) lorsque disponible.</p>
+          </div>
+          <div className="flex gap-2 flex-wrap justify-end">
+            {Array.from(new Set(semestersData.map((s: any) => s.year))).map((year: string) => {
+              const yearSems = semestersData.filter((s: any) => s.year === year);
+              const hasS5 = yearSems.some((s: any) => s.name === 'S5' && !s.isLocked);
+              const hasS6 = yearSems.some((s: any) => s.name === 'S6' && !s.isLocked);
+              const isReady = hasS5 && hasS6;
+              return (
+                <button
+                  key={year}
+                  disabled={!isReady || annualDownloading}
+                  onClick={() => handleDownloadAnnual(year)}
+                  className={`px-5 py-3 rounded-2xl text-sm font-black transition-all ${
+                    isReady && !annualDownloading
+                      ? 'bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  {annualDownloading ? 'Téléchargement...' : `Année ${year}`}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Info helper */}

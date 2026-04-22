@@ -58,6 +58,10 @@ export const gradesService = {
     method: 'POST',
     body: JSON.stringify(gradeData),
   }),
+  getStudentReport: (studentId: string, semesterId: string) =>
+    apiFetch(`/grades/report/${studentId}?semesterId=${semesterId}`),
+  getExistingGrade: (studentId: string, subjectId: string) =>
+    apiFetch(`/grades/existing?studentId=${studentId}&subjectId=${subjectId}`),
   downloadBulletin: async (studentId: string, semesterId: string) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const headers: Record<string, string> = {};
@@ -71,8 +75,20 @@ export const gradesService = {
     if (!response.ok) throw new Error('Erreur lors du téléchargement');
     return response.blob();
   },
+  downloadAnnualBulletin: async (studentId: string, year: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const url = `${API_URL}/exports/bulletin-annual/${studentId}?year=${encodeURIComponent(year)}`;
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
   getPromotionStats: (semesterId: string) => apiFetch(`/grades/stats?semesterId=${semesterId}`),
   getAnnualReport: (studentId: string, year: string) => apiFetch(`/grades/report-annual/${studentId}?year=${year}`),
+  getAnnualPromotionStats: (year: string) => apiFetch(`/grades/stats-annual?year=${year}`),
 };
 
 export const academicService = {
@@ -132,6 +148,10 @@ export const userService = {
     method: 'DELETE',
   }),
   getProfile: () => apiFetch('/users/profile'),
+  updateProfile: (data: ApiPayload) => apiFetch('/users/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }),
   getAuditLogs: () => apiFetch('/grades/audit'),
   getTeachers: () => apiFetch('/users/teachers'),
 };
@@ -148,6 +168,14 @@ export const attendanceService = {
   }),
   deleteAttendance: (id: string) => apiFetch(`/attendance/${id}`, {
     method: 'DELETE',
+  }),
+};
+
+export const settingsService = {
+  getAcademicRules: () => apiFetch('/settings/academic-rules'),
+  updateAcademicRules: (data: ApiPayload) => apiFetch('/settings/academic-rules', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
   }),
 };
 
@@ -183,5 +211,45 @@ export const exportService = {
     });
     if (!response.ok) throw new Error('Erreur lors de l\'importation');
     return response.json();
-  }
+  },
+  downloadPromotionXlsx: async (semesterId: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exports/promotion?semesterId=${encodeURIComponent(semesterId)}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
+  downloadGradesXlsx: async (semesterId: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exports/grades?semesterId=${encodeURIComponent(semesterId)}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
+  downloadAllBulletinsZip: async (semesterId: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exports/bulletins-zip?semesterId=${encodeURIComponent(semesterId)}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
+  downloadAllAnnualBulletinsZip: async (year: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exports/bulletins-annual-zip?year=${encodeURIComponent(year)}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
 };

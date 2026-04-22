@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
 import { LogIn, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -35,8 +37,8 @@ export default function LoginPage() {
 
       <div className="glass-card w-full max-w-md p-10 fade-in relative z-10">
         <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <LogIn className="text-primary w-10 h-10" />
+          <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100">
+            <Image src="/logo-inptic.png" alt="INPTIC" width={76} height={76} priority />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-2">Bon retour !</h1>
           <p className="text-slate-500 text-sm">Portail officiel de gestion des bulletins INPTIC</p>
@@ -95,6 +97,15 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        <div className="flex items-center justify-between mt-6 text-sm">
+          <Link href="/" className="text-slate-500 font-semibold hover:text-primary transition-colors">
+            ← Retour à l’accueil
+          </Link>
+          <Link href="/register" className="text-primary font-black hover:underline">
+            Créer un compte
+          </Link>
+        </div>
 
         <div className="text-center text-xs text-slate-400 mt-10 font-medium">
           &copy; 2026 INPTIC UML &bull; Tous droits réservés
