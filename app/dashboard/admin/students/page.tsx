@@ -210,27 +210,29 @@ export default function StudentsManagement() {
           </select>
           <button 
             onClick={handleDownloadTemplate}
-            className="glass-card px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-primary transition-all flex items-center gap-2 border-white/60"
+            className="glass-card p-2.5 md:px-4 md:py-2.5 text-sm font-bold text-slate-600 hover:text-primary transition-all flex items-center gap-2 border-white/60"
+            title="Canevas Excel"
           >
             <FileDown size={18} />
-            Canevas Excel
+            <span className="hidden md:inline">Canevas Excel</span>
           </button>
           
           <label className={`
-            glass-card px-4 py-2.5 text-sm font-bold transition-all flex items-center gap-2 cursor-pointer border-white/60
+            glass-card p-2.5 md:px-4 md:py-2.5 text-sm font-bold transition-all flex items-center gap-2 cursor-pointer border-white/60
             ${isImporting ? 'opacity-50 pointer-events-none' : 'hover:text-primary'}
-          `}>
+          `} title="Importer Excel">
             {isImporting ? <Clock className="animate-spin" size={18} /> : <FileUp size={18} />}
-            Importer Excel
+            <span className="hidden md:inline">Importer Excel</span>
             <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportExcel} />
           </label>
 
           <button 
             onClick={() => setShowModal(true)}
-            className="bg-primary hover:bg-primary-dark text-white shadow-xl shadow-primary/20 px-6 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 transition-all"
+            className="bg-primary hover:bg-primary-dark text-white shadow-xl shadow-primary/20 p-2.5 md:px-6 md:py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 transition-all"
+            title="Nouvel Étudiant"
           >
             <UserPlus size={18} />
-            Nouvel Étudiant
+            <span className="hidden md:inline">Nouvel Étudiant</span>
           </button>
         </div>
       </div>

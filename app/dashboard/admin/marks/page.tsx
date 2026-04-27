@@ -257,24 +257,26 @@ export default function MarksEntryPage() {
           <button
             type="button"
             onClick={handleDownloadGradesTemplate}
-            className="glass-card px-4 py-2 text-sm font-bold text-slate-600 hover:text-primary transition-all border-white/60 rounded-xl flex items-center gap-2"
+            className="glass-card p-2 md:px-4 md:py-2 text-sm font-bold text-slate-600 hover:text-primary transition-all border-white/60 rounded-xl flex items-center gap-2"
+            title="Canevas notes"
           >
             <FileDown size={16} />
-            Canevas notes
+            <span className="hidden md:inline">Canevas notes</span>
           </button>
 
           <button
             type="button"
             onClick={handleExportGradesXlsx}
-            className="glass-card px-4 py-2 text-sm font-bold text-slate-600 hover:text-primary transition-all border-white/60 rounded-xl flex items-center gap-2"
+            className="glass-card p-2 md:px-4 md:py-2 text-sm font-bold text-slate-600 hover:text-primary transition-all border-white/60 rounded-xl flex items-center gap-2"
+            title="Exporter notes"
           >
             <FileSpreadsheet size={16} />
-            Exporter notes
+            <span className="hidden md:inline">Exporter notes</span>
           </button>
 
-          <label className={`glass-card px-4 py-2 text-sm font-bold transition-all border-white/60 rounded-xl flex items-center gap-2 cursor-pointer ${isImporting ? 'opacity-50 pointer-events-none text-slate-400' : 'text-slate-600 hover:text-primary'}`}>
+          <label className={`glass-card p-2 md:px-4 md:py-2 text-sm font-bold transition-all border-white/60 rounded-xl flex items-center gap-2 cursor-pointer ${isImporting ? 'opacity-50 pointer-events-none text-slate-400' : 'text-slate-600 hover:text-primary'}`} title="Importer notes">
             {isImporting ? <Clock size={16} className="animate-spin" /> : <FileUp size={16} />}
-            Importer notes
+            <span className="hidden md:inline">Importer notes</span>
             <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportExcel} />
           </label>
         </div>
