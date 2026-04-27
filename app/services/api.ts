@@ -115,6 +115,9 @@ export const academicService = {
   deleteSubject: (id: string) => apiFetch(`/academic/subject/${id}`, {
     method: 'DELETE',
   }),
+  toggleSemesterLock: (id: string) => apiFetch(`/academic/semester/${id}/lock`, {
+    method: 'PATCH',
+  }),
 };
 
 export const userService = {
@@ -219,6 +222,16 @@ export const exportService = {
       headers['Authorization'] = `Bearer ${token}`;
     }
     const response = await fetch(`${API_URL}/exports/promotion?semesterId=${encodeURIComponent(semesterId)}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
+  downloadAnnualPromotionXlsx: async (year: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exports/promotion-annual?year=${encodeURIComponent(year)}`, { headers });
     if (!response.ok) throw new Error('Erreur lors du téléchargement');
     return response.blob();
   },

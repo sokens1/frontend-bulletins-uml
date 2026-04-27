@@ -35,7 +35,7 @@ export default function PromotionSummary() {
 
   const fetchSemesters = async () => {
     try {
-      const structure = await academicService.getStructure();
+      const structure = await academicService.getStructure() as any[];
       if (structure && structure.length > 0) {
         setSemesters(structure);
         setSelectedSemester(structure[0].id);
@@ -124,17 +124,24 @@ export default function PromotionSummary() {
   };
 
   const handleExportExcel = async () => {
-    if (viewMode === 'annual') {
-        alert("L'export Excel annuel n'est pas encore implémenté.");
-        return;
-    }
-    if (!selectedSemester) return;
     try {
-      const blob = await exportService.downloadPromotionXlsx(selectedSemester);
+      let blob;
+      let filename;
+      
+      if (viewMode === 'semester') {
+        if (!selectedSemester) return;
+        blob = await exportService.downloadPromotionXlsx(selectedSemester);
+        filename = `promotion_${selectedSemester}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      } else {
+        if (!selectedYear) return;
+        blob = await exportService.downloadAnnualPromotionXlsx(selectedYear);
+        filename = `promotion_annuelle_${selectedYear.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `promotion_${selectedSemester}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

@@ -14,12 +14,15 @@ import {
   Plus,
   Trash2,
   X,
-  ChevronDown
+  ChevronDown,
+  Lock
 } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 import { attendanceService, academicService, userService } from '../../../services/api';
 import SearchableSelect from '../../../components/ui/SearchableSelect';
 
 export default function AbsenceManagement() {
+  const { user } = useAuth();
   const [attendances, setAttendances] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -142,7 +145,7 @@ export default function AbsenceManagement() {
              className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
            >
               <Plus size={18} />
-              Nouveau
+              Saisir une Absence
            </button>
         </div>
       </div>
@@ -247,9 +250,16 @@ export default function AbsenceManagement() {
                            autoFocus
                          />
                        ) : (
-                         <span className={`font-black text-sm ${att.hoursAbsent > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                           {att.hoursAbsent} h
-                         </span>
+                         <div className="flex flex-col items-center gap-1">
+                            <span className={`font-black text-sm ${att.hoursAbsent > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                              {att.hoursAbsent} h
+                            </span>
+                            {att.subject?.ue?.semester?.isLocked && (
+                              <span className="flex items-center gap-1 text-[8px] font-black uppercase text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
+                                <Lock size={8} /> Verrouillé
+                              </span>
+                            )}
+                         </div>
                        )}
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -272,13 +282,23 @@ export default function AbsenceManagement() {
                           <div className="flex items-center justify-end gap-2">
                              <button 
                                onClick={() => handleDelete(att.id)}
-                               className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                               disabled={att.subject?.ue?.semester?.isLocked && (user as any)?.role !== 'ADMIN'}
+                               className={`p-2 rounded-lg transition-all ${
+                                 att.subject?.ue?.semester?.isLocked && (user as any)?.role !== 'ADMIN'
+                                   ? 'text-slate-200 cursor-not-allowed'
+                                   : 'text-slate-300 hover:text-red-500 hover:bg-red-50'
+                               }`}
                              >
                                <Trash2 size={16} />
                              </button>
                              <button 
                                onClick={() => { setEditingId(att.id); setEditValue(att.hoursAbsent); }}
-                               className="text-[10px] font-black uppercase text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-all border border-primary/20"
+                               disabled={att.subject?.ue?.semester?.isLocked && (user as any)?.role !== 'ADMIN'}
+                               className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all border ${
+                                 att.subject?.ue?.semester?.isLocked && (user as any)?.role !== 'ADMIN'
+                                   ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                                   : 'text-primary hover:bg-primary/10 border-primary/20'
+                               }`}
                              >
                                Modifier
                              </button>
@@ -349,10 +369,12 @@ export default function AbsenceManagement() {
 
                  <button 
                    type="submit"
-                   disabled={isSubmitting}
+                   disabled={isSubmitting || (subjects.find(s => s.id === formData.subjectId)?.ue?.semester?.isLocked && (user as any)?.role !== 'ADMIN')}
                    className="w-full bg-primary text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                  >
-                   Enregistrer l'absence
+                   {(subjects.find(s => s.id === formData.subjectId)?.ue?.semester?.isLocked && (user as any)?.role !== 'ADMIN') 
+                     ? 'Semestre Verrouillé' 
+                     : 'Enregistrer l\'absence'}
                  </button>
               </form>
            </div>

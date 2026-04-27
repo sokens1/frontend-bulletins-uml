@@ -16,7 +16,9 @@ import {
   Percent,
   Check,
   X,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  Unlock
 } from 'lucide-react';
 import { academicService, userService, settingsService } from '../../../services/api';
 
@@ -202,6 +204,18 @@ export default function AcademicManagement() {
     }
   };
 
+  const handleToggleLock = async (e: React.MouseEvent, semesterId: string) => {
+    e.stopPropagation();
+    if (!confirm('Voulez-vous changer l\'état de verrouillage de ce semestre ? Cela affectera les droits de saisie.')) return;
+    try {
+      await academicService.toggleSemesterLock(semesterId);
+      showNotification('success', 'État de verrouillage mis à jour');
+      fetchData();
+    } catch (err) {
+      showNotification('error', 'Erreur lors du verrouillage');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
@@ -254,6 +268,22 @@ export default function AcademicManagement() {
                     </div>
                  </div>
                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 mr-2">
+                       <button 
+                         onClick={(e) => handleToggleLock(e, semester.id)}
+                         className={`p-2 rounded-xl border transition-all flex items-center gap-2 ${
+                           semester.isLocked 
+                             ? 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100' 
+                             : 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100'
+                         }`}
+                         title={semester.isLocked ? "Déverrouiller le semestre" : "Verrouiller le semestre"}
+                       >
+                          {semester.isLocked ? <Lock size={16} /> : <Unlock size={16} />}
+                          <span className="text-[10px] font-black uppercase hidden sm:block">
+                            {semester.isLocked ? 'Verrouillé' : 'Ouvert'}
+                          </span>
+                       </button>
+                    </div>
                     <div className="hidden md:flex gap-4">
                        <StatBadge label="UEs" value={semester.ues.length} />
                        <StatBadge label="Crédits Total" value={semester.ues.reduce((acc: number, ue: any) => acc + ue.credits, 0)} />
@@ -269,7 +299,12 @@ export default function AcademicManagement() {
                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Unités d'Enseignement (UE)</p>
                        <button 
                          onClick={() => { setTargetSemesterId(semester.id); setShowUEModal(true); }}
-                         className="flex items-center gap-1.5 text-[10px] font-black text-primary uppercase bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-all"
+                         disabled={semester.isLocked}
+                         className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all ${
+                           semester.isLocked 
+                             ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                             : 'text-primary bg-primary/5 hover:bg-primary/10'
+                         }`}
                         >
                           <Plus size={12} /> Ajouter UE
                        </button>

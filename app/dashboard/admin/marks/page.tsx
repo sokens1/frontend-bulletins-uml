@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Save, User, Book, GraduationCap, AlertCircle, CheckCircle2, Loader2, Info, FileDown, FileUp, Clock, FileSpreadsheet } from 'lucide-react';
+import { Save, User, Book, GraduationCap, AlertCircle, CheckCircle2, Loader2, Info, FileDown, FileUp, Clock, FileSpreadsheet, Lock } from 'lucide-react';
 import SearchableSelect from '../../../components/ui/SearchableSelect';
 import { useAuth } from '../../../context/AuthContext';
 import { userService, academicService, gradesService, exportService } from '../../../services/api';
@@ -249,10 +249,17 @@ export default function MarksEntryPage() {
           >
             {semesters.map((semester) => (
               <option key={semester.id} value={semester.id}>
-                {semester.name}
+                {semester.name} {semester.isLocked ? '(Verrouillé)' : ''}
               </option>
             ))}
           </select>
+
+          {semesters.find(s => s.id === selectedSemesterId)?.isLocked && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-xl border border-red-100 animate-pulse">
+              <Lock size={14} />
+              <span className="text-[10px] font-black uppercase">Saisie fermée</span>
+            </div>
+          )}
 
           <button
             type="button"
@@ -442,8 +449,8 @@ export default function MarksEntryPage() {
 
           <button 
             type="submit" 
-            disabled={submitting}
-            className="btn-primary w-full h-16 mt-6 shadow-xl shadow-primary/20"
+            disabled={submitting || (semesters.find(s => s.id === selectedSemesterId)?.isLocked && (user as any)?.role !== 'ADMIN')}
+            className={`btn-primary w-full h-16 mt-6 shadow-xl shadow-primary/20 ${(semesters.find(s => s.id === selectedSemesterId)?.isLocked && (user as any)?.role !== 'ADMIN') ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {submitting ? (
               <Loader2 className="w-6 h-6 animate-spin text-white" />
@@ -451,7 +458,9 @@ export default function MarksEntryPage() {
               <>
                 <Save className="w-5 h-5" />
                 <span className="text-base font-bold">
-                  {isExistingGrade ? 'Mettre a jour la note' : 'Valider et enregistrer la note'}
+                  {(semesters.find(s => s.id === selectedSemesterId)?.isLocked && (user as any)?.role !== 'ADMIN') 
+                    ? 'Session de saisie verrouillée' 
+                    : (isExistingGrade ? 'Mettre a jour la note' : 'Valider et enregistrer la note')}
                 </span>
               </>
             )}
