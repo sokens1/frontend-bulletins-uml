@@ -89,6 +89,8 @@ export const gradesService = {
   getPromotionStats: (semesterId: string) => apiFetch(`/grades/stats?semesterId=${semesterId}`),
   getAnnualReport: (studentId: string, year: string) => apiFetch(`/grades/report-annual/${studentId}?year=${year}`),
   getAnnualPromotionStats: (year: string) => apiFetch(`/grades/stats-annual?year=${year}`),
+  getSubjectGrades: (subjectId: string) => apiFetch(`/grades/subject/${subjectId}`),
+  getSemesterGrades: (semesterId: string) => apiFetch(`/grades/semester-all/${semesterId}`),
 };
 
 export const academicService = {
