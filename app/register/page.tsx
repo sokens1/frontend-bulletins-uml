@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserPlus, Mail, Lock, User, Calendar, MapPin, School, GraduationCap, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { authService } from '../services/api';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     birthDate: '',
@@ -26,15 +28,21 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // Simulation or actual API call
-      // const response = await authService.register({ ...formData, role: 'STUDENT' });
-      
-      // Temporary success simulation
-      setTimeout(() => {
-        setSuccess(true);
-        setIsLoading(false);
-        setTimeout(() => router.push('/login'), 3000);
-      }, 1500);
+      await authService.register({
+        role: 'STUDENT',
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        birthDate: formData.birthDate,
+        birthPlace: formData.birthPlace,
+        bacType: formData.bacType,
+        provenance: formData.originSchool,
+      });
+
+      setSuccess(true);
+      setIsLoading(false);
+      setTimeout(() => router.push('/login'), 3000);
     } catch (err: any) {
       setError(err.message || "Erreur lors de l'inscription");
       setIsLoading(false);
@@ -84,12 +92,23 @@ export default function RegisterPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="label">Nom & Prénom</label>
+            <label className="label">Prénom</label>
             <div className="relative flex items-center">
               <User className="absolute left-4 w-4 h-4 text-slate-400" />
-              <input 
-                type="text" required className="input-field pl-11 py-3 text-sm" placeholder="Ex: Jean Dupont"
-                value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
+              <input
+                type="text" required className="input-field pl-11 py-3 text-sm" placeholder="Ex: Jean"
+                value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="label">Nom</label>
+            <div className="relative flex items-center">
+              <User className="absolute left-4 w-4 h-4 text-slate-400" />
+              <input
+                type="text" required className="input-field pl-11 py-3 text-sm" placeholder="Ex: Dupont"
+                value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})}
               />
             </div>
           </div>
