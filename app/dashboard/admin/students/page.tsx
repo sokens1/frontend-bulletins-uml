@@ -31,6 +31,7 @@ export default function StudentsManagement() {
   const [downloadingBulletinId, setDownloadingBulletinId] = useState<string | null>(null);
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [semesters, setSemesters] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -45,7 +46,17 @@ export default function StudentsManagement() {
   useEffect(() => {
     fetchStudents();
     fetchSemesters();
+    fetchClasses();
   }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const data = await academicService.getClasses();
+      setClasses(data as any[]);
+    } catch (err) {
+      showNotification('error', 'Impossible de charger les classes');
+    }
+  };
 
   const fetchSemesters = async () => {
     try {
@@ -437,13 +448,20 @@ export default function StudentsManagement() {
                     </div>
                     <div className="space-y-1.5">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Classe / Niveau</label>
-                       <input 
-                         type="text" required
-                         placeholder="ex: LICENCE 1"
+                       <select
+                         required
                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold"
                          value={formData.class}
-                         onChange={(e) => setFormData({...formData, class: e.target.value.toUpperCase()})}
-                       />
+                         onChange={(e) => setFormData({...formData, class: e.target.value})}
+                       >
+                         <option value="" disabled>Sélectionner une classe...</option>
+                         {formData.class && !classes.some((c: any) => c.name === formData.class) && (
+                           <option value={formData.class}>{formData.class} (existante)</option>
+                         )}
+                         {classes.map((c: any) => (
+                           <option key={c.id} value={c.name}>{c.name}</option>
+                         ))}
+                       </select>
                     </div>
                  </div>
 

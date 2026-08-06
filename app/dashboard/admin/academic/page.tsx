@@ -18,17 +18,20 @@ import {
   X,
   AlertCircle,
   Lock,
-  Unlock
+  Unlock,
+  Star
 } from 'lucide-react';
 import { academicService, userService, settingsService } from '../../../services/api';
 
 export default function AcademicManagement() {
   const [structure, setStructure] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [years, setYears] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedSems, setExpandedSems] = useState<string[]>([]);
   const [expandedUEs, setExpandedUEs] = useState<string[]>([]);
-  
+
   const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
   const [editSubjectData, setEditSubjectData] = useState<any>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -41,10 +44,24 @@ export default function AcademicManagement() {
   // Creation states
   const [showUEModal, setShowUEModal] = useState(false);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
+  const [showSemesterModal, setShowSemesterModal] = useState(false);
+  const [editingSemesterId, setEditingSemesterId] = useState<string | null>(null);
   const [targetSemesterId, setTargetSemesterId] = useState<string | null>(null);
   const [targetUEId, setTargetUEId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  const [newClassName, setNewClassName] = useState('');
+  const [isSubmittingClass, setIsSubmittingClass] = useState(false);
+
+  const [newYearLabel, setNewYearLabel] = useState('');
+  const [isSubmittingYear, setIsSubmittingYear] = useState(false);
+
+  const [newSemesterData, setNewSemesterData] = useState({
+    name: '',
+    year: '',
+    isActive: false,
+  });
+
   const [newUEData, setNewUEData] = useState({
     name: '',
     code: '',
@@ -69,13 +86,17 @@ export default function AcademicManagement() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [data, teachersData, rulesData] = await Promise.all([
+      const [data, teachersData, rulesData, classesData, yearsData] = await Promise.all([
         academicService.getStructure(),
         userService.getTeachers(),
-        settingsService.getAcademicRules()
+        settingsService.getAcademicRules(),
+        academicService.getClasses(),
+        academicService.getYears(),
       ]);
       setStructure(data);
       setTeachers(teachersData);
+      setClasses(classesData as any[]);
+      setYears(yearsData as any[]);
       setRulesSettings(rulesData as {
         absencePenaltyPerHour: number;
         soutenanceUeCode: string;
@@ -123,6 +144,116 @@ export default function AcademicManagement() {
       fetchData();
     } catch (err) {
       showNotification('error', 'Erreur lors de la mise à jour');
+    }
+  };
+
+  const handleCreateClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClassName.trim()) return;
+    try {
+      setIsSubmittingClass(true);
+      await academicService.createClass({ name: newClassName.trim().toUpperCase() });
+      showNotification('success', 'Classe créée avec succès');
+      setNewClassName('');
+      fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de la création de la classe');
+    } finally {
+      setIsSubmittingClass(false);
+    }
+  };
+
+  const handleDeleteClass = async (id: string) => {
+    if (!confirm('Supprimer cette classe ? Les étudiants déjà affectés garderont leur classe actuelle, mais elle ne sera plus proposée dans la liste.')) return;
+    try {
+      await academicService.deleteClass(id);
+      showNotification('success', 'Classe supprimée');
+      fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de la suppression');
+    }
+  };
+
+  const handleCreateYear = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newYearLabel.trim()) return;
+    try {
+      setIsSubmittingYear(true);
+      await academicService.createYear({ label: newYearLabel.trim() });
+      showNotification('success', 'Année universitaire créée avec succès');
+      setNewYearLabel('');
+      fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de la création de l\'année');
+    } finally {
+      setIsSubmittingYear(false);
+    }
+  };
+
+  const handleDeleteYear = async (id: string) => {
+    if (!confirm('Supprimer cette année universitaire ? Les semestres déjà créés avec cette année ne seront pas modifiés.')) return;
+    try {
+      await academicService.deleteYear(id);
+      showNotification('success', 'Année supprimée');
+      fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de la suppression');
+    }
+  };
+
+  const handleActivateYear = async (id: string) => {
+    try {
+      await academicService.activateYear(id);
+      showNotification('success', 'Année active mise à jour');
+      fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de l\'activation');
+    }
+  };
+
+  const openCreateSemesterModal = () => {
+    setEditingSemesterId(null);
+    setNewSemesterData({ name: '', year: years.find(y => y.isActive)?.label || '', isActive: false });
+    setShowSemesterModal(true);
+  };
+
+  const openEditSemesterModal = (semester: any) => {
+    setEditingSemesterId(semester.id);
+    setNewSemesterData({ name: semester.name, year: semester.year, isActive: semester.isActive });
+    setShowSemesterModal(true);
+  };
+
+  const handleSaveSemester = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsSubmitting(true);
+      if (editingSemesterId) {
+        await academicService.updateSemester(editingSemesterId, newSemesterData);
+        showNotification('success', 'Semestre mis à jour avec succès');
+      } else {
+        await academicService.createSemester(newSemesterData);
+        showNotification('success', 'Semestre créé avec succès');
+      }
+      setShowSemesterModal(false);
+      setEditingSemesterId(null);
+      setNewSemesterData({ name: '', year: '', isActive: false });
+      fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de l\'enregistrement du semestre');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSemester = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!confirm('Supprimer ce semestre ? Cette action est impossible tant qu\'il contient encore des UE.')) return;
+    try {
+      await academicService.deleteSemester(id);
+      showNotification('success', 'Semestre supprimé');
+      fetchData();
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de la suppression');
     }
   };
 
@@ -229,11 +360,109 @@ export default function AcademicManagement() {
         </div>
 
         <div className="flex items-center gap-3">
-           <button className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+           <button
+             onClick={openCreateSemesterModal}
+             className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
+           >
               <Plus size={18} />
               Ajouter un Semestre
            </button>
         </div>
+      </div>
+
+      {/* Academic Years Management */}
+      <div className="glass-card p-6 border-white/50 shadow-xl flex flex-col gap-4">
+         <div className="flex items-center gap-3">
+            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 text-primary">
+               <Calendar size={22} />
+            </div>
+            <div>
+               <h3 className="font-black text-slate-800 text-lg tracking-tight">Années Universitaires</h3>
+               <p className="text-slate-400 text-xs font-medium">Créez les années disponibles pour vos semestres. L&apos;année active est proposée par défaut.</p>
+            </div>
+         </div>
+
+         <form onSubmit={handleCreateYear} className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Ex: 2026-2027"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold"
+              value={newYearLabel}
+              onChange={(e) => setNewYearLabel(e.target.value)}
+            />
+            <button
+              type="submit"
+              disabled={isSubmittingYear || !newYearLabel.trim()}
+              className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
+            >
+               <Plus size={16} /> Ajouter
+            </button>
+         </form>
+
+         <div className="flex flex-wrap gap-2">
+            {years.length === 0 ? (
+              <p className="text-slate-400 text-xs font-medium">Aucune année pour l&apos;instant — ajoutez-en une ci-dessus.</p>
+            ) : years.map((y: any) => (
+              <span key={y.id} className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                y.isActive ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-slate-100 border-slate-200 text-slate-600'
+              }`}>
+                 <button
+                   onClick={() => handleActivateYear(y.id)}
+                   title={y.isActive ? 'Année active' : 'Définir comme année active'}
+                   className={y.isActive ? 'text-primary' : 'text-slate-300 hover:text-amber-400'}
+                 >
+                    <Star size={12} fill={y.isActive ? 'currentColor' : 'none'} />
+                 </button>
+                 {y.label}
+                 <button onClick={() => handleDeleteYear(y.id)} className="text-slate-400 hover:text-red-500 transition-all">
+                    <X size={12} />
+                 </button>
+              </span>
+            ))}
+         </div>
+      </div>
+
+      {/* Classes Management */}
+      <div className="glass-card p-6 border-white/50 shadow-xl flex flex-col gap-4">
+         <div className="flex items-center gap-3">
+            <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 text-primary">
+               <GraduationCap size={22} />
+            </div>
+            <div>
+               <h3 className="font-black text-slate-800 text-lg tracking-tight">Classes</h3>
+               <p className="text-slate-400 text-xs font-medium">Liste des classes proposées lors de l&apos;inscription des étudiants.</p>
+            </div>
+         </div>
+
+         <form onSubmit={handleCreateClass} className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Ex: LP ASUR"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold"
+              value={newClassName}
+              onChange={(e) => setNewClassName(e.target.value)}
+            />
+            <button
+              type="submit"
+              disabled={isSubmittingClass || !newClassName.trim()}
+              className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
+            >
+               <Plus size={16} /> Ajouter
+            </button>
+         </form>
+
+         <div className="flex flex-wrap gap-2">
+            {classes.length === 0 ? (
+              <p className="text-slate-400 text-xs font-medium">Aucune classe pour l&apos;instant — ajoutez-en une ci-dessus.</p>
+            ) : classes.map((c: any) => (
+              <span key={c.id} className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-black text-slate-600">
+                 {c.name}
+                 <button onClick={() => handleDeleteClass(c.id)} className="text-slate-400 hover:text-red-500 transition-all">
+                    <X size={12} />
+                 </button>
+              </span>
+            ))}
+         </div>
       </div>
 
       {notification && (
@@ -269,11 +498,25 @@ export default function AcademicManagement() {
                  </div>
                  <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2 mr-2">
-                       <button 
+                       <button
+                         onClick={(e) => { e.stopPropagation(); openEditSemesterModal(semester); }}
+                         className="p-2 rounded-xl border border-slate-100 text-slate-400 hover:text-primary hover:bg-slate-50 transition-all"
+                         title="Modifier le semestre"
+                       >
+                          <Edit3 size={16} />
+                       </button>
+                       <button
+                         onClick={(e) => handleDeleteSemester(e, semester.id)}
+                         className="p-2 rounded-xl border border-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                         title="Supprimer le semestre"
+                       >
+                          <Trash2 size={16} />
+                       </button>
+                       <button
                          onClick={(e) => handleToggleLock(e, semester.id)}
                          className={`p-2 rounded-xl border transition-all flex items-center gap-2 ${
-                           semester.isLocked 
-                             ? 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100' 
+                           semester.isLocked
+                             ? 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'
                              : 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100'
                          }`}
                          title={semester.isLocked ? "Déverrouiller le semestre" : "Verrouiller le semestre"}
@@ -524,6 +767,74 @@ export default function AcademicManagement() {
            </button>
          </div>
       </form>
+
+      {showSemesterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+           <div className="glass-card w-full max-w-md p-8 border-white/60 shadow-2xl animate-slide-up">
+              <div className="flex items-center justify-between mb-8">
+                 <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                   {editingSemesterId ? 'Modifier le Semestre' : 'Nouveau Semestre'}
+                 </h3>
+                 <button onClick={() => { setShowSemesterModal(false); setEditingSemesterId(null); }} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-all">
+                    <X size={20} />
+                 </button>
+              </div>
+
+              <form onSubmit={handleSaveSemester} className="space-y-5">
+                 <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nom (ex: S5, S6)</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-sm font-bold"
+                      value={newSemesterData.name}
+                      onChange={(e) => setNewSemesterData({...newSemesterData, name: e.target.value})}
+                    />
+                 </div>
+                 <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Année Universitaire</label>
+                    {years.length === 0 ? (
+                      <p className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+                        Aucune année créée pour l&apos;instant — ajoutez-en une dans la carte &quot;Années Universitaires&quot; ci-dessus avant de créer un semestre.
+                      </p>
+                    ) : (
+                      <select
+                        required
+                        className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-sm font-bold text-slate-700"
+                        value={newSemesterData.year}
+                        onChange={(e) => setNewSemesterData({...newSemesterData, year: e.target.value})}
+                      >
+                         <option value="" disabled>Sélectionner une année...</option>
+                         {newSemesterData.year && !years.some((y: any) => y.label === newSemesterData.year) && (
+                           <option value={newSemesterData.year}>{newSemesterData.year} (existante)</option>
+                         )}
+                         {years.map((y: any) => (
+                           <option key={y.id} value={y.label}>{y.label}</option>
+                         ))}
+                      </select>
+                    )}
+                 </div>
+                 <label className="flex items-center gap-3 text-sm font-bold text-slate-600 ml-1">
+                    <input
+                      type="checkbox"
+                      checked={newSemesterData.isActive}
+                      onChange={(e) => setNewSemesterData({...newSemesterData, isActive: e.target.checked})}
+                      className="w-4 h-4"
+                    />
+                    Définir comme semestre actif
+                 </label>
+
+                 <button
+                   type="submit"
+                   disabled={isSubmitting || years.length === 0}
+                   className="w-full bg-primary text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all disabled:opacity-50"
+                 >
+                   {editingSemesterId ? 'Enregistrer les modifications' : 'Créer le semestre'}
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
 
       {showUEModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">

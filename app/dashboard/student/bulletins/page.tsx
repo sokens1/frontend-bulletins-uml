@@ -8,10 +8,12 @@ import { FileDown, FileText, Download, Loader2, AlertCircle, CheckCircle, Gradua
 export default function StudentBulletinsPage() {
   const { user } = useAuth();
   const [downloading, setDownloading] = useState(false);
+  const [htmlDownloading, setHtmlDownloading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [semestersData, setSemestersData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [annualDownloading, setAnnualDownloading] = useState(false);
+  const [annualHtmlDownloading, setAnnualHtmlDownloading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -75,6 +77,57 @@ export default function StudentBulletinsPage() {
       setMessage({ type: 'error', text: "Le bulletin n'est pas encore disponible. Contactez l'administration." });
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadHtml = async (semesterId: string) => {
+    if (!user) return;
+    setHtmlDownloading(true);
+    setMessage(null);
+
+    try {
+      const profile = await userService.getProfile() as any;
+      const studentId: string | undefined = profile?.student?.id;
+      if (!studentId) throw new Error('Student profile missing');
+
+      const blob = await gradesService.downloadBulletinHtml(studentId, semesterId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bulletin_INPTIC_${user.email.split('@')[0]}.html`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setMessage({ type: 'success', text: 'Document HTML généré et téléchargé avec succès.' });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: "Le bulletin n'est pas encore disponible. Contactez l'administration." });
+    } finally {
+      setHtmlDownloading(false);
+    }
+  };
+
+  const handleDownloadAnnualHtml = async (year: string) => {
+    if (!user) return;
+    setAnnualHtmlDownloading(true);
+    setMessage(null);
+    try {
+      const profile = await userService.getProfile() as any;
+      const studentId: string | undefined = profile?.student?.id;
+      if (!studentId) throw new Error('Student profile missing');
+
+      const blob = await gradesService.downloadAnnualBulletinHtml(studentId, year);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bulletin_Annuel_INPTIC_${year}_${user.email.split('@')[0]}.html`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      setMessage({ type: 'success', text: 'Bulletin annuel (HTML) téléchargé avec succès.' });
+    } catch {
+      setMessage({ type: 'error', text: "Le bulletin annuel n'est pas encore disponible." });
+    } finally {
+      setAnnualHtmlDownloading(false);
     }
   };
 
@@ -173,20 +226,36 @@ export default function StudentBulletinsPage() {
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => handleDownload(sem.id)}
-                  disabled={downloading}
-                  className="btn-primary w-full h-16 shadow-xl shadow-primary/20 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all"
-                >
-                  {downloading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    <>
-                      <Download className="w-5 h-5" />
-                      <span className="font-bold">Télécharger le Bulletin (PDF)</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => handleDownload(sem.id)}
+                    disabled={downloading}
+                    className="btn-primary w-full h-16 shadow-xl shadow-primary/20 bg-primary hover:bg-primary-dark text-white rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all"
+                  >
+                    {downloading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5" />
+                        <span className="font-bold">Télécharger le Bulletin (PDF)</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleDownloadHtml(sem.id)}
+                    disabled={htmlDownloading}
+                    className="w-full h-12 border-2 border-primary/20 text-primary hover:bg-primary/5 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  >
+                    {htmlDownloading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm font-bold">Version HTML</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center py-10 border-2 border-dashed border-slate-200 rounded-[2rem]">
@@ -211,18 +280,30 @@ export default function StudentBulletinsPage() {
               const hasS6 = yearSems.some((s: any) => s.name === 'S6' && !s.isLocked);
               const isReady = hasS5 && hasS6;
               return (
-                <button
-                  key={year}
-                  disabled={!isReady || annualDownloading}
-                  onClick={() => handleDownloadAnnual(year)}
-                  className={`px-5 py-3 rounded-2xl text-sm font-black transition-all ${
-                    isReady && !annualDownloading
-                      ? 'bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20'
-                      : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  }`}
-                >
-                  {annualDownloading ? 'Téléchargement...' : `Année ${year}`}
-                </button>
+                <div key={year} className="flex gap-2">
+                  <button
+                    disabled={!isReady || annualDownloading}
+                    onClick={() => handleDownloadAnnual(year)}
+                    className={`px-5 py-3 rounded-2xl text-sm font-black transition-all ${
+                      isReady && !annualDownloading
+                        ? 'bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20'
+                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {annualDownloading ? 'Téléchargement...' : `Année ${year} (PDF)`}
+                  </button>
+                  <button
+                    disabled={!isReady || annualHtmlDownloading}
+                    onClick={() => handleDownloadAnnualHtml(year)}
+                    className={`px-5 py-3 rounded-2xl text-sm font-black transition-all border-2 ${
+                      isReady && !annualHtmlDownloading
+                        ? 'border-primary/20 text-primary hover:bg-primary/5'
+                        : 'border-slate-100 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {annualHtmlDownloading ? '...' : 'HTML'}
+                  </button>
+                </div>
               );
             })}
           </div>

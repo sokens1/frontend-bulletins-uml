@@ -86,6 +86,28 @@ export const gradesService = {
     if (!response.ok) throw new Error('Erreur lors du téléchargement');
     return response.blob();
   },
+  downloadBulletinHtml: async (studentId: string, semesterId: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const url = `${API_URL}/exports/bulletin-html/${studentId}?semesterId=${semesterId}`;
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
+  downloadAnnualBulletinHtml: async (studentId: string, year: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const url = `${API_URL}/exports/bulletin-annual-html/${studentId}?year=${encodeURIComponent(year)}`;
+    const response = await fetch(url, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
   getPromotionStats: (semesterId: string) => apiFetch(`/grades/stats?semesterId=${semesterId}`),
   getAnnualReport: (studentId: string, year: string) => apiFetch(`/grades/report-annual/${studentId}?year=${year}`),
   getAnnualPromotionStats: (year: string) => apiFetch(`/grades/stats-annual?year=${year}`),
@@ -95,6 +117,36 @@ export const gradesService = {
 
 export const academicService = {
   getStructure: () => apiFetch('/academic/structure'),
+  getClasses: () => apiFetch('/academic/classes'),
+  createClass: (data: ApiPayload) => apiFetch('/academic/classes', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  deleteClass: (id: string) => apiFetch(`/academic/classes/${id}`, {
+    method: 'DELETE',
+  }),
+  getYears: () => apiFetch('/academic/years'),
+  createYear: (data: ApiPayload) => apiFetch('/academic/years', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  deleteYear: (id: string) => apiFetch(`/academic/years/${id}`, {
+    method: 'DELETE',
+  }),
+  activateYear: (id: string) => apiFetch(`/academic/years/${id}/activate`, {
+    method: 'PATCH',
+  }),
+  createSemester: (data: ApiPayload) => apiFetch('/academic/semester', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  updateSemester: (id: string, data: ApiPayload) => apiFetch(`/academic/semester/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }),
+  deleteSemester: (id: string) => apiFetch(`/academic/semester/${id}`, {
+    method: 'DELETE',
+  }),
   createUE: (data: ApiPayload) => apiFetch('/academic/ue', {
     method: 'POST',
     body: JSON.stringify(data),
