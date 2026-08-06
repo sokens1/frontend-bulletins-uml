@@ -187,6 +187,10 @@ export const userService = {
   deleteStudent: (id: string) => apiFetch(`/users/student/${id}`, {
     method: 'DELETE',
   }),
+  deleteStudents: (ids: string[]) => apiFetch('/users/students', {
+    method: 'DELETE',
+    body: JSON.stringify({ ids }),
+  }),
 
   getStaff: () => apiFetch('/users/staff'),
   createTeacher: (data: ApiPayload) => apiFetch('/users/teacher', {

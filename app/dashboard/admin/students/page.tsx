@@ -32,6 +32,9 @@ export default function StudentsManagement() {
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [semesters, setSemesters] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; students: any[] } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -141,15 +144,42 @@ export default function StudentsManagement() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cet étudiant ?')) return;
+  const requestDelete = (student: any) => {
+    setDeleteTarget({ ids: [student.id], students: [student] });
+  };
+
+  const requestBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    const targeted = students.filter(s => selectedIds.includes(s.id));
+    setDeleteTarget({ ids: selectedIds, students: targeted });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await userService.deleteStudent(id);
-      showNotification('success', 'Étudiant supprimé');
+      setIsDeleting(true);
+      await userService.deleteStudents(deleteTarget.ids);
+      showNotification('success', deleteTarget.ids.length > 1
+        ? `${deleteTarget.ids.length} étudiants supprimés`
+        : 'Étudiant supprimé');
+      setSelectedIds(prev => prev.filter(id => !deleteTarget.ids.includes(id)));
+      setDeleteTarget(null);
       fetchStudents();
-    } catch (err) {
-      showNotification('error', 'Erreur lors de la suppression');
+    } catch (err: any) {
+      showNotification('error', err.message || 'Erreur lors de la suppression');
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleSelectAll = () => {
+    const visibleIds = filteredStudents.map(s => s.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    setSelectedIds(allSelected ? [] : visibleIds);
   };
 
   const handleDownloadBulletin = async (studentId: string, fullName: string) => {
@@ -305,6 +335,14 @@ export default function StudentsManagement() {
               />
            </div>
            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <button
+                  onClick={requestBulkDelete}
+                  className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  <Trash2 size={14} /> Supprimer ({selectedIds.length})
+                </button>
+              )}
               <span className="text-xs font-bold text-slate-400 px-3 truncate">
                 Affichage de {filteredStudents.length} sur {students.length}
               </span>
@@ -315,6 +353,14 @@ export default function StudentsManagement() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/20 text-[10px] uppercase tracking-widest text-slate-400 font-black">
+                <th className="px-6 py-5 w-10">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded accent-primary cursor-pointer"
+                    checked={filteredStudents.length > 0 && filteredStudents.every(s => selectedIds.includes(s.id))}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-5">Matricule</th>
                 <th className="px-6 py-5">Nom & Prénom</th>
                 <th className="px-6 py-5">Classe</th>
@@ -325,14 +371,14 @@ export default function StudentsManagement() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-20 text-center">
+                  <td colSpan={6} className="p-20 text-center">
                     <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                     <p className="mt-4 text-slate-400 font-bold uppercase text-[10px] tracking-widest">Chargement sécurisé...</p>
                   </td>
                 </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-20 text-center">
+                  <td colSpan={6} className="p-20 text-center">
                     <div className="bg-slate-50 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4">
                       <Search className="text-slate-300" size={32} />
                     </div>
@@ -342,7 +388,15 @@ export default function StudentsManagement() {
                 </tr>
               ) : (
                 filteredStudents.map((student) => (
-                  <tr key={student.id} className="group border-b border-white/10 hover:bg-white/50 transition-all">
+                  <tr key={student.id} className={`group border-b border-white/10 hover:bg-white/50 transition-all ${selectedIds.includes(student.id) ? 'bg-primary/5' : ''}`}>
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded accent-primary cursor-pointer"
+                        checked={selectedIds.includes(student.id)}
+                        onChange={() => toggleSelectOne(student.id)}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <span className="bg-slate-100 px-3 py-1 rounded-lg text-[10px] font-black text-slate-600 border border-white">
                         {student.studentId || 'NON-DÉFINI'}
@@ -365,7 +419,7 @@ export default function StudentsManagement() {
                         <button onClick={() => openEditModal(student)} className="p-2 hover:bg-blue-50 text-blue-600 rounded-xl transition-all border border-transparent hover:border-blue-100">
                           <Edit size={16} />
                         </button>
-                        <button onClick={() => handleDelete(student.id)} className="p-2 hover:bg-red-50 text-red-600 rounded-xl transition-all border border-transparent hover:border-red-100">
+                        <button onClick={() => requestDelete(student)} className="p-2 hover:bg-red-50 text-red-600 rounded-xl transition-all border border-transparent hover:border-red-100">
                           <Trash2 size={16} />
                         </button>
                         <button
@@ -510,6 +564,51 @@ export default function StudentsManagement() {
                     </button>
                  </div>
               </form>
+           </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+           <div className="glass-card w-full max-w-md p-8 border-white/60 shadow-2xl animate-slide-up">
+              <div className="flex items-center gap-4 mb-6">
+                 <div className="bg-red-50 p-3 rounded-2xl text-red-600 shrink-0">
+                    <AlertCircle size={24} />
+                 </div>
+                 <div>
+                    <h3 className="text-lg font-black text-slate-800 tracking-tight">
+                      {deleteTarget.ids.length > 1 ? `Supprimer ${deleteTarget.ids.length} étudiants ?` : 'Supprimer cet étudiant ?'}
+                    </h3>
+                    <p className="text-slate-400 text-xs font-medium mt-0.5">Cette action est irréversible : notes et absences associées seront aussi supprimées.</p>
+                 </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 max-h-48 overflow-y-auto flex flex-col gap-2 mb-6">
+                 {deleteTarget.students.map((s: any) => (
+                   <div key={s.id} className="flex items-center justify-between text-sm">
+                      <span className="font-bold text-slate-700">{s.lastName} {s.firstName}</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase">{s.studentId || 'NON-DÉFINI'}</span>
+                   </div>
+                 ))}
+              </div>
+
+              <div className="flex items-center gap-3">
+                 <button
+                   onClick={() => setDeleteTarget(null)}
+                   disabled={isDeleting}
+                   className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                 >
+                   Annuler
+                 </button>
+                 <button
+                   onClick={handleConfirmDelete}
+                   disabled={isDeleting}
+                   className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                 >
+                   {isDeleting ? <Clock className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                   Supprimer
+                 </button>
+              </div>
            </div>
         </div>
       )}
