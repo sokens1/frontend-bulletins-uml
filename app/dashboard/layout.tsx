@@ -51,20 +51,20 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen flex bg-[#f8fafc] text-slate-800">
       {/* Sidebar - Responsive icon-only to full width */}
-      <aside className="w-20 lg:w-80 flex flex-col p-2 lg:p-6 sticky top-0 h-screen transition-all duration-300 border-r border-slate-200 lg:border-none bg-white lg:bg-transparent z-40 shrink-0">
-        <div className="lg:glass-card h-full min-h-0 flex flex-col lg:p-6 lg:shadow-xl lg:border-white/50">
+      <aside className="w-20 lg:w-72 flex flex-col sticky top-0 h-screen transition-all duration-300 bg-primary z-40 shrink-0 shadow-xl shadow-primary/20">
+        <div className="h-full min-h-0 flex flex-col p-3 lg:p-6">
           <div className="flex items-center justify-center lg:justify-start gap-3 mb-8 lg:mb-12 px-1 lg:px-2">
-            <div className="bg-white p-2 rounded-2xl shadow-sm lg:shadow-lg border border-slate-100 flex-shrink-0">
+            <div className="bg-white p-2 rounded-2xl shadow-lg flex-shrink-0">
               <Image src="/logo-inptic.png" alt="INPTIC" width={44} height={44} priority className="w-8 h-8 lg:w-11 lg:h-11" />
             </div>
             <div className="hidden lg:flex flex-col leading-tight">
-              <span className="font-black text-base tracking-tight text-slate-800">INPTIC</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portail Bulletins</span>
+              <span className="font-black text-base tracking-tight text-white">INPTIC</span>
+              <span className="text-[10px] font-bold text-blue-200/70 uppercase tracking-widest">Portail Bulletins</span>
             </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-            <nav className="flex flex-col gap-2">
+            <nav className="flex flex-col gap-1.5">
               <NavItem 
                 icon={<LayoutDashboard />} 
                 label="Tableau de bord" 
@@ -74,8 +74,8 @@ export default function DashboardLayout({
 
             {(user.role === 'ADMIN' || user.role === 'TEACHER' || user.role === 'SECRETARY') && (
               <>
-                <div className="hidden lg:block text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 lg:mt-8 mb-2 lg:mb-3 px-4">Scolarité</div>
-                <div className="lg:hidden h-px bg-slate-100 my-2 mx-2"></div>
+                <div className="hidden lg:block text-[10px] font-bold text-blue-200/50 uppercase tracking-widest mt-6 lg:mt-8 mb-2 lg:mb-3 px-4">Scolarité</div>
+                <div className="lg:hidden h-px bg-white/10 my-2 mx-2"></div>
                 <NavItem 
                   icon={<PenTool />} 
                   label="Saisie des notes" 
@@ -87,8 +87,8 @@ export default function DashboardLayout({
 
             {(user.role === 'ADMIN' || user.role === 'SECRETARY') && (
               <>
-                <div className="hidden lg:block text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 lg:mt-8 mb-2 lg:mb-3 px-4">Administration</div>
-                <div className="lg:hidden h-px bg-slate-100 my-2 mx-2"></div>
+                <div className="hidden lg:block text-[10px] font-bold text-blue-200/50 uppercase tracking-widest mt-6 lg:mt-8 mb-2 lg:mb-3 px-4">Administration</div>
+                <div className="lg:hidden h-px bg-white/10 my-2 mx-2"></div>
                 <NavItem 
                   icon={<Clock />} 
                   label="Gestion Absences" 
@@ -102,16 +102,24 @@ export default function DashboardLayout({
                   active={pathname === '/dashboard/admin/promotion'}
                 />
                 {user.role === 'ADMIN' && (
-                  <NavItem 
-                    icon={<Users />} 
-                    label="Gestion Étudiants" 
+                  <NavItem
+                    icon={<Users />}
+                    label="Gestion Étudiants"
                     onClick={() => router.push('/dashboard/admin/students')}
                     active={pathname === '/dashboard/admin/students'}
                   />
                 )}
                 {user.role === 'ADMIN' && (
-                  <NavItem 
-                    icon={<History />} 
+                  <NavItem
+                    icon={<GraduationCap />}
+                    label="Classes"
+                    onClick={() => router.push('/dashboard/admin/classes')}
+                    active={pathname.startsWith('/dashboard/admin/classes')}
+                  />
+                )}
+                {user.role === 'ADMIN' && (
+                  <NavItem
+                    icon={<History />}
                     label="Audit Sécurité" 
                     onClick={() => router.push('/dashboard/admin/audit')}
                     active={pathname === '/dashboard/admin/audit'}
@@ -138,8 +146,8 @@ export default function DashboardLayout({
 
               {user.role === 'STUDENT' && (
                 <>
-                  <div className="hidden lg:block text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 lg:mt-8 mb-2 lg:mb-3 px-4">Résultats</div>
-                  <div className="lg:hidden h-px bg-slate-100 my-2 mx-2"></div>
+                  <div className="hidden lg:block text-[10px] font-bold text-blue-200/50 uppercase tracking-widest mt-6 lg:mt-8 mb-2 lg:mb-3 px-4">Résultats</div>
+                  <div className="lg:hidden h-px bg-white/10 my-2 mx-2"></div>
                   <NavItem 
                     icon={<FileText />} 
                     label="Mes Bulletins" 
@@ -150,18 +158,18 @@ export default function DashboardLayout({
               )}
             </nav>
 
-            <div className="pt-4 lg:pt-6 mt-auto lg:mt-6 border-t border-slate-100 flex flex-col gap-2">
-              <Link href="/dashboard/profile" className="group flex items-center justify-center lg:justify-between p-3 rounded-xl hover:bg-slate-50 transition-all" title="Mon Profil">
-                <div className="flex items-center gap-3 text-slate-600 group-hover:text-primary transition-colors">
+            <div className="pt-4 lg:pt-6 mt-auto lg:mt-6 border-t border-white/10 flex flex-col gap-2">
+              <Link href="/dashboard/profile" className="group flex items-center justify-center lg:justify-between p-3 rounded-xl hover:bg-white/5 transition-all" title="Mon Profil">
+                <div className="flex items-center gap-3 text-blue-100 group-hover:text-white transition-colors">
                   <UserCircle className="w-6 h-6 lg:w-5 lg:h-5" />
                   <span className="hidden lg:block text-sm font-semibold">Mon Profil</span>
                 </div>
-                <ChevronRight className={`hidden lg:block w-4 h-4 transition-all ${pathname === '/dashboard/profile' ? 'text-primary opacity-100' : 'text-slate-300 opacity-0 group-hover:opacity-100'}`} />
+                <ChevronRight className={`hidden lg:block w-4 h-4 transition-all ${pathname === '/dashboard/profile' ? 'text-secondary opacity-100' : 'text-white/30 opacity-0 group-hover:opacity-100'}`} />
               </Link>
-              <button 
-                onClick={logout} 
+              <button
+                onClick={logout}
                 title="Déconnexion"
-                className="flex items-center justify-center lg:justify-start gap-3 p-3 lg:p-4 rounded-xl lg:rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all font-bold text-sm"
+                className="flex items-center justify-center lg:justify-start gap-3 p-3 lg:p-4 rounded-xl lg:rounded-2xl bg-white/10 text-white hover:bg-red-500/90 transition-all font-bold text-sm"
               >
                 <LogOut className="w-5 h-5" />
                 <span className="hidden lg:inline">Déconnexion</span>
@@ -213,17 +221,17 @@ function NavItem({ icon, label, onClick, active = false, disabled = false }: { i
       title={label}
       className={`
         flex items-center justify-center lg:justify-start gap-3 p-3 lg:p-3.5 rounded-xl lg:rounded-2xl transition-all duration-300 group
-        ${active ? 'bg-primary/10 lg:bg-primary/5 text-primary shadow-sm shadow-primary/5' : 'text-slate-500 hover:bg-slate-50 hover:text-primary'}
+        ${active ? 'bg-white/10 text-white shadow-sm' : 'text-blue-100/70 hover:bg-white/5 hover:text-white'}
         ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
       `}
     >
-      <div className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+      <div className={`transition-transform duration-300 ${active ? 'scale-110 text-secondary' : 'group-hover:scale-110'}`}>
         {React.cloneElement(icon, { size: 22 })}
       </div>
       <span className="hidden lg:block text-sm font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
         {label}
       </span>
-      {active && <div className="hidden lg:block ml-auto w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(0,51,102,0.5)]"></div>}
+      {active && <div className="hidden lg:block ml-auto w-1.5 h-1.5 bg-secondary rounded-full shadow-[0_0_8px_rgba(252,194,0,0.6)]"></div>}
     </button>
   );
 }

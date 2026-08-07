@@ -252,14 +252,25 @@ export const exportService = {
     if (!response.ok) throw new Error('Erreur lors du téléchargement du modèle');
     return response.blob();
   },
-  importExcel: async (type: 'students' | 'grades', file: File, semesterId?: string) => {
+  downloadStudentsXlsx: async (className?: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const query = className ? `?class=${encodeURIComponent(className)}` : '';
+    const response = await fetch(`${API_URL}/exports/students${query}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement de la liste des étudiants');
+    return response.blob();
+  },
+  importExcel: async (type: 'students' | 'grades', file: File, semesterIdOrDefaultClass?: string) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const formData = new FormData();
     formData.append('file', file);
-    
-    const url = type === 'students' 
-      ? `${API_URL}/exports/import-students`
-      : `${API_URL}/exports/import-grades?semesterId=${semesterId}`;
+
+    const url = type === 'students'
+      ? `${API_URL}/exports/import-students${semesterIdOrDefaultClass ? `?defaultClass=${encodeURIComponent(semesterIdOrDefaultClass)}` : ''}`
+      : `${API_URL}/exports/import-grades?semesterId=${semesterIdOrDefaultClass}`;
 
     const headers: Record<string, string> = {};
     if (token && token !== 'null' && token !== 'undefined') {
