@@ -194,8 +194,12 @@ export default function MarksEntryPage() {
   };
 
   const handleDownloadGradesTemplate = async () => {
+    if (!selectedSemesterId) {
+      setMessage({ type: 'error', text: 'Sélectionnez un semestre pour générer le canevas.' });
+      return;
+    }
     try {
-      const blob = await exportService.downloadTemplate('GRADES');
+      const blob = await exportService.downloadTemplate('GRADES', selectedSemesterId);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -298,7 +302,7 @@ export default function MarksEntryPage() {
             type="button"
             onClick={handleDownloadGradesTemplate}
             className="glass-card p-2 md:px-4 md:py-2 text-sm font-bold text-slate-600 hover:text-primary transition-all border-white/60 rounded-xl flex items-center gap-2"
-            title="Canevas notes"
+            title="Génère un canevas pré-rempli (matricule, nom, prénom, matière) pour le semestre sélectionné — il ne reste qu'à saisir les notes"
           >
             <FileDown size={16} />
             <span className="hidden md:inline">Canevas notes</span>

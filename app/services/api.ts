@@ -241,13 +241,14 @@ export const settingsService = {
 };
 
 export const exportService = {
-  downloadTemplate: async (type: 'STUDENTS' | 'GRADES') => {
+  downloadTemplate: async (type: 'STUDENTS' | 'GRADES', semesterId?: string) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const headers: Record<string, string> = {};
     if (token && token !== 'null' && token !== 'undefined') {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    const response = await fetch(`${API_URL}/exports/template/${type}`, { headers });
+    const query = semesterId ? `?semesterId=${encodeURIComponent(semesterId)}` : '';
+    const response = await fetch(`${API_URL}/exports/template/${type}${query}`, { headers });
     if (!response.ok) throw new Error('Erreur lors du téléchargement du modèle');
     return response.blob();
   },

@@ -15,7 +15,8 @@ import {
   FileText,
   FileArchive,
   Calendar,
-  Layers
+  Layers,
+  Loader2
 } from 'lucide-react';
 import { gradesService, academicService, exportService } from '../../../services/api';
 
@@ -29,6 +30,7 @@ export default function PromotionSummary() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+  const [downloadingAll, setDownloadingAll] = useState<'pdf' | 'zip' | null>(null);
 
   const years = Array.from(new Set(semesters.map(s => s.year)));
 
@@ -155,6 +157,7 @@ export default function PromotionSummary() {
 
   const handleDownloadAll = async (format: 'pdf' | 'zip') => {
     setDownloadMenuOpen(false);
+    setDownloadingAll(format);
     try {
       let blob;
       let filename;
@@ -183,6 +186,8 @@ export default function PromotionSummary() {
       window.URL.revokeObjectURL(url);
     } catch {
       alert(`Erreur lors du téléchargement ${format === 'pdf' ? 'PDF' : 'ZIP'}.`);
+    } finally {
+      setDownloadingAll(null);
     }
   };
 
@@ -275,14 +280,24 @@ export default function PromotionSummary() {
             )}
             <div className="relative">
               <button
-                onClick={() => setDownloadMenuOpen((v) => !v)}
-                className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
+                onClick={() => !downloadingAll && setDownloadMenuOpen((v) => !v)}
+                disabled={!!downloadingAll}
+                className="bg-primary hover:bg-primary-dark disabled:opacity-70 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
               >
-                <FileText size={18} />
-                Bulletins {viewMode === 'annual' ? 'Annuels' : ''}
-                <ChevronDown size={14} className={`transition-transform ${downloadMenuOpen ? 'rotate-180' : ''}`} />
+                {downloadingAll ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Génération en cours…
+                  </>
+                ) : (
+                  <>
+                    <FileText size={18} />
+                    Bulletins {viewMode === 'annual' ? 'Annuels' : ''}
+                    <ChevronDown size={14} className={`transition-transform ${downloadMenuOpen ? 'rotate-180' : ''}`} />
+                  </>
+                )}
               </button>
-              {downloadMenuOpen && (
+              {downloadMenuOpen && !downloadingAll && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setDownloadMenuOpen(false)} />
                   <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden">
@@ -312,6 +327,12 @@ export default function PromotionSummary() {
             </div>
           </div>
         </div>
+        {downloadingAll && (
+          <p className="text-xs text-slate-400 font-medium flex items-center gap-1.5 mt-1">
+            <Loader2 size={12} className="animate-spin" />
+            Préparation des bulletins pour tous les étudiants — cela peut prendre quelques instants selon l'effectif.
+          </p>
+        )}
       </div>
 
       {stats && (
