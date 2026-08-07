@@ -323,4 +323,24 @@ export const exportService = {
     if (!response.ok) throw new Error('Erreur lors du téléchargement');
     return response.blob();
   },
+  downloadAllBulletinsPdf: async (semesterId: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exports/bulletins-pdf?semesterId=${encodeURIComponent(semesterId)}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
+  downloadAllAnnualBulletinsPdf: async (year: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exports/bulletins-annual-pdf?year=${encodeURIComponent(year)}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement');
+    return response.blob();
+  },
 };

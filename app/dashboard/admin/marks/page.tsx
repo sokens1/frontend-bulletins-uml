@@ -12,7 +12,7 @@ export default function MarksEntryPage() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string, details?: string[] } | null>(null);
   const [isExistingGrade, setIsExistingGrade] = useState(false);
   const [semesters, setSemesters] = useState<any[]>([]);
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
@@ -239,13 +239,14 @@ export default function MarksEntryPage() {
     try {
       setIsImporting(true);
       const result = await exportService.importExcel('grades', file, selectedSemesterId) as { imported?: number; skipped?: number; errors?: string[] };
+      const imported = result.imported ?? 0;
+      const skipped = result.skipped ?? 0;
+      const hasErrors = (result.errors?.length ?? 0) > 0;
       setMessage({
-        type: 'success',
-        text: `${result.imported ?? 0} note(s) importée(s) avec succès. ${result.skipped ?? 0} ligne(s) ignorée(s).`,
+        type: imported > 0 || !hasErrors ? 'success' : 'error',
+        text: `${imported} note(s) importée(s). ${skipped} ligne(s) ignorée(s)${hasErrors ? ' — détails ci-dessous.' : '.'}`,
+        details: result.errors,
       });
-      if (result.errors && result.errors.length > 0) {
-        console.warn('Erreurs import notes:', result.errors);
-      }
     } catch {
       setMessage({ type: 'error', text: 'Erreur lors de l’import Excel des notes.' });
     } finally {
@@ -342,13 +343,22 @@ export default function MarksEntryPage() {
           
           <form onSubmit={handleSubmit} className="flex flex-col gap-8 relative z-10">
             {message && (
-              <div className={`p-5 rounded-2xl flex items-center gap-4 border-2 shadow-sm animate-shake ${
+              <div className={`p-5 rounded-2xl flex flex-col gap-3 border-2 shadow-sm animate-shake ${
                 message.type === 'success' ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'
               }`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${message.type === 'success' ? 'bg-green-100' : 'bg-red-100'}`}>
-                   {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                <div className="flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${message.type === 'success' ? 'bg-green-100' : 'bg-red-100'}`}>
+                     {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                  </div>
+                  <span className="font-bold text-sm">{message.text}</span>
                 </div>
-                <span className="font-bold text-sm">{message.text}</span>
+                {message.details && message.details.length > 0 && (
+                  <ul className="max-h-40 overflow-y-auto text-xs font-medium bg-white/60 rounded-xl p-3 ml-14 list-disc list-inside space-y-1">
+                    {message.details.map((detail, idx) => (
+                      <li key={idx}>{detail}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

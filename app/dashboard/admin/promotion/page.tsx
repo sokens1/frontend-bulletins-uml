@@ -11,7 +11,9 @@ import {
   Users,
   Award,
   ChevronRight,
+  ChevronDown,
   FileText,
+  FileArchive,
   Calendar,
   Layers
 } from 'lucide-react';
@@ -26,6 +28,7 @@ export default function PromotionSummary() {
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
 
   const years = Array.from(new Set(semesters.map(s => s.year)));
 
@@ -150,19 +153,25 @@ export default function PromotionSummary() {
     }
   };
 
-  const handleDownloadAllZip = async () => {
+  const handleDownloadAll = async (format: 'pdf' | 'zip') => {
+    setDownloadMenuOpen(false);
     try {
       let blob;
       let filename;
+      const ext = format === 'pdf' ? 'pdf' : 'zip';
 
       if (viewMode === 'semester') {
         if (!selectedSemester) return;
-        blob = await exportService.downloadAllBulletinsZip(selectedSemester);
-        filename = `bulletins_semestre_${selectedSemester}_${new Date().toISOString().slice(0, 10)}.zip`;
+        blob = format === 'pdf'
+          ? await exportService.downloadAllBulletinsPdf(selectedSemester)
+          : await exportService.downloadAllBulletinsZip(selectedSemester);
+        filename = `bulletins_semestre_${selectedSemester}_${new Date().toISOString().slice(0, 10)}.${ext}`;
       } else {
         if (!selectedYear) return;
-        blob = await exportService.downloadAllAnnualBulletinsZip(selectedYear);
-        filename = `bulletins_annuels_${selectedYear.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.zip`;
+        blob = format === 'pdf'
+          ? await exportService.downloadAllAnnualBulletinsPdf(selectedYear)
+          : await exportService.downloadAllAnnualBulletinsZip(selectedYear);
+        filename = `bulletins_annuels_${selectedYear.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.${ext}`;
       }
 
       const url = window.URL.createObjectURL(blob);
@@ -173,7 +182,7 @@ export default function PromotionSummary() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
-      alert("Erreur lors du téléchargement ZIP.");
+      alert(`Erreur lors du téléchargement ${format === 'pdf' ? 'PDF' : 'ZIP'}.`);
     }
   };
 
@@ -264,13 +273,43 @@ export default function PromotionSummary() {
                  XLSX
               </button>
             )}
-            <button
-              onClick={handleDownloadAllZip}
-              className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
-            >
-              <FileText size={18} />
-              ZIP {viewMode === 'annual' ? 'Annuel' : 'Bulletins'}
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setDownloadMenuOpen((v) => !v)}
+                className="bg-primary hover:bg-primary-dark text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
+              >
+                <FileText size={18} />
+                Bulletins {viewMode === 'annual' ? 'Annuels' : ''}
+                <ChevronDown size={14} className={`transition-transform ${downloadMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {downloadMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setDownloadMenuOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden">
+                    <button
+                      onClick={() => handleDownloadAll('pdf')}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                    >
+                      <FileText size={16} className="text-primary" />
+                      <span>
+                        PDF unique
+                        <span className="block text-xs font-normal text-slate-400">Tous les bulletins fusionnés en un seul fichier</span>
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => handleDownloadAll('zip')}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors text-left border-t border-slate-100"
+                    >
+                      <FileArchive size={16} className="text-primary" />
+                      <span>
+                        ZIP séparé
+                        <span className="block text-xs font-normal text-slate-400">Un fichier PDF par étudiant</span>
+                      </span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
