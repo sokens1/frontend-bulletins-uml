@@ -34,42 +34,44 @@ export default function MarksEntryPage() {
   const [rattrapageGrade, setRattrapageGrade] = useState('');
   const [lastPrefillNoticeKey, setLastPrefillNoticeKey] = useState('');
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const structure = await academicService.getStructure();
-        const allSubjects: any[] = [];
-        setSemesters(structure);
-        if (structure.length > 0) {
-          setSelectedSemesterId(structure[0].id);
-        }
+  const loadData = async (opts?: { keepSelectedSemester?: boolean }) => {
+    try {
+      const structure = await academicService.getStructure();
+      const allSubjects: any[] = [];
+      setSemesters(structure);
+      if (structure.length > 0 && !opts?.keepSelectedSemester) {
+        setSelectedSemesterId(structure[0].id);
+      }
 
-        structure.forEach((sem: any) => {
-          sem.ues.forEach((ue: any) => {
-            ue.subjects.forEach((subj: any) => {
-              // Filter by teacher assignment only when teacher metadata exists.
-              const currentTeacherId = (user as any)?.teacher?.id;
-              const isAssigned = currentTeacherId ? subj.teacherId === currentTeacherId : true;
-              
-              if (isAssigned && !allSubjects.find(s => s.id === subj.id)) {
-                allSubjects.push({ ...subj, ueName: ue.name });
-              }
-            });
+      structure.forEach((sem: any) => {
+        sem.ues.forEach((ue: any) => {
+          ue.subjects.forEach((subj: any) => {
+            // Filter by teacher assignment only when teacher metadata exists.
+            const currentTeacherId = (user as any)?.teacher?.id;
+            const isAssigned = currentTeacherId ? subj.teacherId === currentTeacherId : true;
+
+            if (isAssigned && !allSubjects.find(s => s.id === subj.id)) {
+              allSubjects.push({ ...subj, ueName: ue.name });
+            }
           });
         });
-        
-        // Wait, students aren't directly in semesters in our API structure update, fetch them from userService
-        const allStudents = await userService.getStudents();
+      });
 
-        setStudents(allStudents);
-        setSubjects(allSubjects);
-      } catch (err) {
-        console.error("Failed to load academic data", err);
-      } finally {
-        setLoading(false);
-      }
+      // Wait, students aren't directly in semesters in our API structure update, fetch them from userService
+      const allStudents = await userService.getStudents();
+
+      setStudents(allStudents);
+      setSubjects(allSubjects);
+    } catch (err) {
+      console.error("Failed to load academic data", err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -242,15 +244,48 @@ export default function MarksEntryPage() {
 
     try {
       setIsImporting(true);
-      const result = await exportService.importExcel('grades', file, selectedSemesterId) as { imported?: number; skipped?: number; errors?: string[] };
+      const result = await exportService.importExcel('grades', file, selectedSemesterId) as {
+        imported?: number; skipped?: number; errors?: string[];
+        created?: { subjects?: string[]; students?: string[] };
+        semesterSwitch?: { from: string; to: { id: string; name: string; year: string }; created: boolean } | null;
+        demographicsUpdated?: number;
+      };
       const imported = result.imported ?? 0;
       const skipped = result.skipped ?? 0;
+      const createdSubjects = result.created?.subjects ?? [];
+      const createdStudents = result.created?.students ?? [];
       const hasErrors = (result.errors?.length ?? 0) > 0;
+      const hasCreated = createdSubjects.length > 0 || createdStudents.length > 0;
+      const sw = result.semesterSwitch;
+      const demographicsUpdated = result.demographicsUpdated ?? 0;
+
+      const creationNotes = [
+        ...(sw ? [
+          `Ce fichier appartient à ${sw.to.name} (${sw.to.year}), différent du semestre sélectionné (${sw.from}) — `
+          + (sw.created
+            ? `import redirigé automatiquement vers un nouveau semestre "${sw.to.name} (${sw.to.year})" créé pour l'occasion.`
+            : `import redirigé automatiquement vers le semestre existant "${sw.to.name} (${sw.to.year})".`),
+        ] : []),
+        ...createdSubjects.map((s) => `Nouvelle matière créée : "${s}" — à compléter/classer dans Gestion Académique.`),
+        ...createdStudents.map((s) => `Nouvel étudiant créé : ${s} — à compléter dans Gestion Étudiants.`),
+        ...(demographicsUpdated > 0 ? [`${demographicsUpdated} étudiant(s) complété(s) (date/lieu de naissance, etc.) depuis le tableau récapitulatif du fichier.`] : []),
+      ];
+
       setMessage({
         type: imported > 0 || !hasErrors ? 'success' : 'error',
-        text: `${imported} note(s) importée(s). ${skipped} ligne(s) ignorée(s)${hasErrors ? ' — détails ci-dessous.' : '.'}`,
-        details: result.errors,
+        text: `${imported} note(s) importée(s). ${skipped} ligne(s) ignorée(s)`
+          + (sw ? ` — semestre ${sw.to.name} (${sw.to.year}) utilisé.` : '.')
+          + (hasCreated ? ` ${createdSubjects.length} matière(s) et ${createdStudents.length} étudiant(s) créé(s) automatiquement.` : '')
+          + (hasErrors ? ' Détails ci-dessous.' : ''),
+        details: [...creationNotes, ...(result.errors ?? [])],
       });
+
+      // A new/different semester may have been created or targeted — refresh the list and
+      // switch to it so the just-imported grades are immediately visible.
+      if (sw) {
+        await loadData({ keepSelectedSemester: true });
+        setSelectedSemesterId(sw.to.id);
+      }
     } catch {
       setMessage({ type: 'error', text: 'Erreur lors de l’import Excel des notes.' });
     } finally {
