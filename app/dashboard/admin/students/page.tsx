@@ -252,7 +252,7 @@ export default function StudentsManagement() {
           >
             {semesters.map((sem) => (
               <option key={sem.id} value={sem.id}>
-                {sem.name}
+                {sem.name} ({sem.year})
               </option>
             ))}
           </select>

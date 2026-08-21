@@ -264,7 +264,7 @@ export default function PromotionSummary() {
                       : 'text-slate-500 hover:text-slate-800'
                     }`}
                   >
-                    {sem.name}
+                    {sem.name} ({sem.year})
                   </button>
                 ))
              ) : (

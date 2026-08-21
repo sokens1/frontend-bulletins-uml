@@ -285,7 +285,7 @@ export default function ClassDetailPage() {
             onChange={(e) => setSelectedSemesterId(e.target.value)}
           >
             {semesters.map((sem) => (
-              <option key={sem.id} value={sem.id}>{sem.name}</option>
+              <option key={sem.id} value={sem.id}>{sem.name} ({sem.year})</option>
             ))}
           </select>
           <button

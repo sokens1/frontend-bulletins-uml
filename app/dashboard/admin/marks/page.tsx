@@ -321,7 +321,7 @@ export default function MarksEntryPage() {
           >
             {semesters.map((semester) => (
               <option key={semester.id} value={semester.id}>
-                {semester.name} {semester.isLocked ? '(Verrouillé)' : ''}
+                {semester.name} ({semester.year}) {semester.isLocked ? '(Verrouillé)' : ''}
               </option>
             ))}
           </select>
