@@ -247,7 +247,9 @@ export default function MarksEntryPage() {
       const result = await exportService.importExcel('grades', file, selectedSemesterId) as {
         imported?: number; skipped?: number; errors?: string[];
         created?: { subjects?: string[]; students?: string[] };
-        semesterSwitch?: { from: string; to: { id: string; name: string; year: string }; created: boolean } | null;
+        // Plural: a single workbook can mix several semesters (e.g. a file with both S5 and
+        // S6 relevés) — each gets routed to its own Semester, not just the first one found.
+        semesterSwitches?: { from: string; to: { id: string; name: string; year: string }; created: boolean }[];
         demographicsUpdated?: number;
       };
       const imported = result.imported ?? 0;
@@ -256,16 +258,15 @@ export default function MarksEntryPage() {
       const createdStudents = result.created?.students ?? [];
       const hasErrors = (result.errors?.length ?? 0) > 0;
       const hasCreated = createdSubjects.length > 0 || createdStudents.length > 0;
-      const sw = result.semesterSwitch;
+      const switches = result.semesterSwitches ?? [];
       const demographicsUpdated = result.demographicsUpdated ?? 0;
 
       const creationNotes = [
-        ...(sw ? [
-          `Ce fichier appartient à ${sw.to.name} (${sw.to.year}), différent du semestre sélectionné (${sw.from}) — `
+        ...switches.map((sw) =>
+          `Une partie de ce fichier appartient à ${sw.to.name} (${sw.to.year}), différent du semestre sélectionné (${sw.from}) — `
           + (sw.created
             ? `import redirigé automatiquement vers un nouveau semestre "${sw.to.name} (${sw.to.year})" créé pour l'occasion.`
-            : `import redirigé automatiquement vers le semestre existant "${sw.to.name} (${sw.to.year})".`),
-        ] : []),
+            : `import redirigé automatiquement vers le semestre existant "${sw.to.name} (${sw.to.year})".`)),
         ...createdSubjects.map((s) => `Nouvelle matière créée : "${s}" — à compléter/classer dans Gestion Académique.`),
         ...createdStudents.map((s) => `Nouvel étudiant créé : ${s} — à compléter dans Gestion Étudiants.`),
         ...(demographicsUpdated > 0 ? [`${demographicsUpdated} étudiant(s) complété(s) (date/lieu de naissance, etc.) depuis le tableau récapitulatif du fichier.`] : []),
@@ -274,17 +275,19 @@ export default function MarksEntryPage() {
       setMessage({
         type: imported > 0 || !hasErrors ? 'success' : 'error',
         text: `${imported} note(s) importée(s). ${skipped} ligne(s) ignorée(s)`
-          + (sw ? ` — semestre ${sw.to.name} (${sw.to.year}) utilisé.` : '.')
+          + (switches.length === 1 ? ` — semestre ${switches[0].to.name} (${switches[0].to.year}) utilisé.`
+            : switches.length > 1 ? ` — répartie sur ${switches.length} semestres (voir détails).` : '.')
           + (hasCreated ? ` ${createdSubjects.length} matière(s) et ${createdStudents.length} étudiant(s) créé(s) automatiquement.` : '')
           + (hasErrors ? ' Détails ci-dessous.' : ''),
         details: [...creationNotes, ...(result.errors ?? [])],
       });
 
-      // A new/different semester may have been created or targeted — refresh the list and
-      // switch to it so the just-imported grades are immediately visible.
-      if (sw) {
+      // One or more different semesters may have been created or targeted — refresh the list
+      // and switch to the first one so at least some of the just-imported grades are
+      // immediately visible (the dropdown now shows the year, so the others are easy to find).
+      if (switches.length > 0) {
         await loadData({ keepSelectedSemester: true });
-        setSelectedSemesterId(sw.to.id);
+        setSelectedSemesterId(switches[0].to.id);
       }
     } catch {
       setMessage({ type: 'error', text: 'Erreur lors de l’import Excel des notes.' });
