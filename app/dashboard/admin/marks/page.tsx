@@ -302,7 +302,7 @@ export default function MarksEntryPage() {
             type="button"
             onClick={handleDownloadGradesTemplate}
             className="glass-card p-2 md:px-4 md:py-2 text-sm font-bold text-slate-600 hover:text-primary transition-all border-white/60 rounded-xl flex items-center gap-2"
-            title="Génère un canevas pré-rempli (matricule, nom, prénom, matière) pour le semestre sélectionné — il ne reste qu'à saisir les notes"
+            title="Génère un relevé de notes par matière (un onglet par matière, étudiants pré-remplis) pour le semestre sélectionné — il ne reste qu'à saisir les notes"
           >
             <FileDown size={16} />
             <span className="hidden md:inline">Canevas notes</span>
