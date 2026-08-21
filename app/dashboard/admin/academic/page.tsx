@@ -292,7 +292,7 @@ export default function AcademicManagement() {
   };
 
   const handleDeleteSubject = async (id: string) => {
-    if (!confirm('Supprimer cette matière ?')) return;
+    if (!confirm('Supprimer cette matière ainsi que toutes les notes et absences déjà saisies pour elle ? Cette action est irréversible.')) return;
     try {
       await academicService.deleteSubject(id);
       showNotification('success', 'Matière supprimée');
@@ -303,7 +303,7 @@ export default function AcademicManagement() {
   };
 
   const handleDeleteUE = async (id: string) => {
-    if (!confirm('Supprimer cette UE et toutes ses matières ?')) return;
+    if (!confirm('Supprimer cette UE, toutes ses matières et toutes les notes/absences déjà saisies pour elles ? Cette action est irréversible.')) return;
     try {
       await academicService.deleteUE(id);
       showNotification('success', 'UE supprimée');
