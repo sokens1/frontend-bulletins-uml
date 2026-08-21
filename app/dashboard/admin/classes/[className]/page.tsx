@@ -136,8 +136,15 @@ export default function ClassDetailPage() {
       setIsImporting(true);
       // className passed as defaultClass: rows may omit the CLASSE column entirely
       // and still land in this class.
-      const result = await exportService.importExcel('students', file, className);
-      showNotification('success', `${result.imported} étudiants importés avec succès`);
+      const result = await exportService.importExcel('students', file, className) as { imported?: number; updated?: number; skipped?: number; errors?: string[] };
+      const created = result.imported ?? 0;
+      const updated = result.updated ?? 0;
+      const errors = result.errors ?? [];
+      if (errors.length > 0) console.warn('Erreurs import étudiants:', errors);
+      showNotification(
+        errors.length > 0 && created + updated === 0 ? 'error' : 'success',
+        `${created} étudiant(s) créé(s), ${updated} mis à jour${errors.length > 0 ? `, ${errors.length} ligne(s) en erreur (voir console)` : ''}`,
+      );
       fetchStudents();
     } catch {
       showNotification('error', 'Erreur lors de l’importation. Vérifiez le format du fichier.');
