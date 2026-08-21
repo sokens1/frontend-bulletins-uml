@@ -939,7 +939,7 @@ export default function AcademicManagement() {
 
                  <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Enseignant</label>
-                    <select 
+                    <select
                       className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-700"
                       value={newSubjectData.teacherId}
                       onChange={(e) => setNewSubjectData({...newSubjectData, teacherId: e.target.value})}
@@ -949,7 +949,24 @@ export default function AcademicManagement() {
                     </select>
                  </div>
 
-                 <button 
+                 <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notation</label>
+                    <select
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-700"
+                      value={newSubjectData.examWeight === 1 ? 'unique' : 'standard'}
+                      onChange={(e) => setNewSubjectData(e.target.value === 'unique'
+                        ? { ...newSubjectData, ccWeight: 0, examWeight: 1 }
+                        : { ...newSubjectData, ccWeight: 0.4, examWeight: 0.6 })}
+                    >
+                       <option value="standard">Contrôle Continu 40% / Examen 60%</option>
+                       <option value="unique">Note unique (Stage, Soutenance, …)</option>
+                    </select>
+                    <p className="text-[10px] text-slate-400 ml-1">
+                      « Note unique » : seule la colonne Examen du relevé compte — pratique pour un stage ou une soutenance noté(e) une seule fois.
+                    </p>
+                 </div>
+
+                 <button
                    type="submit"
                    disabled={isSubmitting}
                    className="w-full bg-primary text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all disabled:opacity-50"
