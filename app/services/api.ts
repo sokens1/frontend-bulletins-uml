@@ -305,6 +305,19 @@ export const exportService = {
     if (!response.ok) throw new Error('Erreur lors du téléchargement');
     return response.blob();
   },
+  // "TabAnnuel" + "BulletinAnnuel" — the S5+S6 recap workbook (per-UE moyenne/rang for each
+  // semester, moyenne générale, rang annuel, crédits, décision du jury, mention), with a
+  // dynamic per-student bulletin driven by a N° selector like the per-semester canevas.
+  downloadAnnualTemplate: async (year: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {};
+    if (token && token !== 'null' && token !== 'undefined') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_URL}/exports/template-annual/${encodeURIComponent(year)}`, { headers });
+    if (!response.ok) throw new Error('Erreur lors du téléchargement du bilan annuel');
+    return response.blob();
+  },
   downloadGradesXlsx: async (semesterId: string) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const headers: Record<string, string> = {};

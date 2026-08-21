@@ -155,6 +155,22 @@ export default function PromotionSummary() {
     }
   };
 
+  const handleDownloadAnnualTemplate = async () => {
+    if (!selectedYear) return;
+    try {
+      const blob = await exportService.downloadAnnualTemplate(selectedYear);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bilan_annuel_${selectedYear.replace(/\s+/g, '_')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('Erreur lors du téléchargement du bilan annuel.');
+    }
+  };
+
   const handleDownloadAll = async (format: 'pdf' | 'zip') => {
     setDownloadMenuOpen(false);
     setDownloadingAll(format);
@@ -269,13 +285,21 @@ export default function PromotionSummary() {
           </div>
 
           <div className="flex items-center gap-2">
-            {viewMode === 'semester' && (
+            <button
+              onClick={handleExportExcel}
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+            >
+               <FileSpreadsheet size={18} />
+               XLSX
+            </button>
+            {viewMode === 'annual' && (
               <button
-                onClick={handleExportExcel}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+                onClick={handleDownloadAnnualTemplate}
+                title="Bilan annuel dynamique (TabAnnuel + Bulletin par étudiant, comme le canevas notes)"
+                className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-slate-700/20 transition-all"
               >
                  <FileSpreadsheet size={18} />
-                 XLSX
+                 Bilan annuel (canevas)
               </button>
             )}
             <div className="relative">
